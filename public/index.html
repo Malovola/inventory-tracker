@@ -1,192 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NexTrack — Commercial Inventory Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root { font-family: 'Inter', sans-serif; }
-        h1, h2, h3, h4, h5, .brand-font { font-family: 'Outfit', sans-serif; }
-        body { background: #0b1121; color: #f8fafc; margin: 0; min-height: 100vh; overflow-x: hidden; }
-        
-        .glass-card {
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-        }
-        
-        .sidebar {
-            width: 260px;
-            background: rgba(15, 23, 42, 0.98);
-            border-right: 1px solid rgba(255, 255, 255, 0.06);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease-in-out;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                bottom: 0;
-                left: 0;
-                z-index: 50;
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .sidebar-backdrop {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.6);
-                backdrop-filter: blur(4px);
-                z-index: 40;
-            }
-            .sidebar-backdrop.active {
-                display: block;
-            }
-        }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            min-height: 100vh;
-            background: radial-gradient(circle at top right, rgba(30, 58, 138, 0.12), transparent 50%), #0b1121;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(15, 23, 42, 0.65);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 0.5rem;
-            color: #f8fafc;
-            transition: all 0.2s;
-            outline: none;
-            font-size: 0.9rem;
-        }
-        .input-field:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4);
-        }
-        
-        .nav-link {
-            padding: 0.85rem 1.5rem;
-            margin: 0.25rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            cursor: pointer;
-            color: #94a3b8;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .nav-link.active {
-            background: #1e293b;
-            color: #60a5fa;
-            border-left: 3px solid #3b82f6;
-            border-radius: 0 0.5rem 0.5rem 0;
-            margin-left: 0;
-            padding-left: calc(1.5rem + 1rem - 3px);
-        }
-        .nav-link:hover:not(.active) {
-            color: #f8fafc;
-            background: rgba(255,255,255,0.03);
-        }
-        
-        .metric-card {
-            background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        th {
-            text-align: left;
-            padding: 0.875rem 1rem;
-            color: #94a3b8;
-            font-weight: 600;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        td {
-            padding: 0.875rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            color: #cbd5e1;
-            font-size: 0.875rem;
-        }
-        tr:hover td { background: rgba(255,255,255,0.02); }
-        
-        .hidden { display: none !important; }
-        
-        #log {
-            max-height: 220px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-        .log-entry {
-            padding: 0.65rem 0.85rem;
-            border-radius: 0.4rem;
-            font-size: 0.825rem;
-            border-left: 3px solid;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .log-ok { background: rgba(16, 185, 129, 0.1); color: #a7f3d0; border-color: #10b981; }
-        .log-err { background: rgba(239, 68, 68, 0.1); color: #fecaca; border-color: #ef4444; }
-
-        .role-badge {
-            font-size: 0.7rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 9999px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .role-owner { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.3); }
-        .role-manager { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
-        .role-cashier { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-    </style>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
 </head>
-<body class="flex flex-col md:flex-row h-screen">
 
+<body class="flex flex-col md:flex-row h-screen overflow-hidden">
     <!-- Mobile Backdrop -->
     <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
 
@@ -194,166 +22,395 @@
     <aside id="sidebar" class="sidebar py-6 flex-shrink-0">
         <div class="flex items-center justify-between px-6 mb-8">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-xl shadow-[0_0_15px_rgba(59,130,246,0.5)] brand-font">N</div>
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-xl shadow-[0_0_15px_rgba(59,130,246,0.5)] brand-font">
+                    N
+                </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-wide">NexTrack</h1>
                     <span class="text-[10px] text-blue-400 font-semibold tracking-wider uppercase">Enterprise</span>
                 </div>
             </div>
             <button class="md:hidden text-slate-400 hover:text-white" onclick="toggleSidebar()">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
-        
+
         <!-- Navigation Menu -->
         <nav class="flex-1 flex flex-col gap-1">
-            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-6 mb-2 mt-2">Navigation</div>
-            
+            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-6 mb-2 mt-2">
+                Navigation
+            </div>
+
             <a id="nav-dashboard" class="nav-link active brand-font" onclick="switchTab('dashboard')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                    </path>
+                </svg>
                 Dashboard
             </a>
-            
+
             <a id="nav-management" class="nav-link brand-font" onclick="switchTab('management')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
                 Stock Management
             </a>
         </nav>
-        
+
         <!-- User Profile & Store Info Card -->
         <div class="p-4 mx-3 mt-auto bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-3">
             <div class="flex items-center justify-between">
                 <div>
-                    <div id="user-display-name" class="font-semibold text-sm text-white">Loading...</div>
-                    <div id="user-role-badge" class="mt-1 inline-block role-badge role-cashier">CASHIER</div>
+                    <div id="user-display-name" class="font-semibold text-sm text-white">
+                        Loading...
+                    </div>
+                    <div id="user-role-badge" class="mt-1 inline-block role-badge role-cashier">
+                        CASHIER
+                    </div>
                 </div>
             </div>
-            
+
             <div class="pt-2 border-t border-slate-800 text-xs">
                 <div class="text-slate-400">Business Unit:</div>
-                <div id="user-business-name" class="font-medium text-blue-300 truncate">HQ Convenience Store</div>
+                <div id="user-business-name" class="font-medium text-blue-300 truncate">
+                    HQ Convenience Store
+                </div>
             </div>
 
-            <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 mt-1 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            <button onclick="logout()"
+                class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 mt-1 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
                 Sign Out
             </button>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content flex flex-col p-4 md:p-8">
-        
+    <main class="main-content flex flex-col flex-1 h-screen overflow-y-auto lg:overflow-hidden p-3 lg:p-4">
         <!-- Top App Bar -->
-        <header class="flex justify-between items-center mb-6">
+        <header
+            class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-3 pb-2 border-b border-slate-800">
             <div class="flex items-center gap-3">
-                <button class="md:hidden p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white" onclick="toggleSidebar()">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <button
+                    class="md:hidden p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white"
+                    onclick="toggleSidebar()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
                 </button>
-                <h2 id="page-title" class="text-2xl md:text-3xl font-bold brand-font text-white">Dashboard Overview</h2>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h2 id="page-title" class="text-2xl font-bold brand-font text-white">Dashboard Overview</h2>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live Sync
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">Enterprise SKU inventory telemetry & commercial analytics
+                    </p>
+                </div>
             </div>
-            <div class="flex items-center gap-3">
-                <span id="role-pill" class="hidden md:inline-block role-badge role-owner">OWNER</span>
+
+            <!-- Quick Action / Global Time Period Selector -->
+            <div class="flex items-center gap-2.5 w-full lg:w-auto justify-between lg:justify-end">
+                <div class="flex items-center bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs">
+                    <button type="button" id="global-filter-day" onclick="setGlobalPeriod('day')"
+                        class="px-3 py-1 rounded font-medium text-slate-400 hover:text-white transition">Day</button>
+                    <button type="button" id="global-filter-month" onclick="setGlobalPeriod('month')"
+                        class="px-3 py-1 rounded font-medium text-slate-400 hover:text-white transition">Month</button>
+                    <button type="button" id="global-filter-year" onclick="setGlobalPeriod('year')"
+                        class="px-3 py-1 rounded font-medium text-slate-400 hover:text-white transition">Year</button>
+                    <button type="button" id="global-filter-all" onclick="setGlobalPeriod('all')"
+                        class="px-3 py-1 rounded font-medium text-white bg-blue-600 transition">All Time</button>
+                </div>
+
+                <button onclick="fetchDashboard()"
+                    class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 shadow-sm transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    Sync Ledger
+                </button>
             </div>
         </header>
 
         <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="space-y-6 max-w-6xl">
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                <div class="metric-card">
-                    <div class="text-xs text-blue-300 font-semibold uppercase tracking-wider mb-1">Total Revenue</div>
-                    <div class="text-3xl md:text-4xl font-bold text-white brand-font" id="dash-revenue">$0.00</div>
+        <div id="view-dashboard" class="space-y-3.5 w-full max-w-[1650px] mx-auto">
+            <!-- 1. COMPACT COMMERCIAL KPI GRID -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div class="metric-card p-3">
+                    <div
+                        class="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                        <span>Gross Revenue</span>
+                        <span class="text-emerald-400 font-mono text-[10px]">▲ 8.2%</span>
+                    </div>
+                    <div class="text-xl font-bold text-white brand-font mt-0.5" id="dash-revenue">$0.00</div>
+                    <div class="text-[9px] text-slate-500">Invoiced sales</div>
                 </div>
-                <div class="metric-card border-emerald-500/20">
-                    <div class="text-xs text-emerald-300 font-semibold uppercase tracking-wider mb-1">Units Sold</div>
-                    <div class="text-3xl md:text-4xl font-bold text-white brand-font" id="dash-sold">0</div>
+
+                <div class="metric-card p-3 border-emerald-500/25">
+                    <div
+                        class="flex items-center justify-between text-[10px] text-emerald-300 uppercase tracking-wider font-semibold">
+                        <span>Net Profit</span>
+                        <span class="text-emerald-400 font-mono text-[10px]">▲ 14.1%</span>
+                    </div>
+                    <div class="text-xl font-bold text-emerald-400 brand-font mt-0.5" id="dash-profit">$0.00</div>
+                    <div class="text-[9px] text-slate-500">Realized margin</div>
                 </div>
-                <div class="metric-card border-purple-500/20 sm:col-span-2 md:col-span-1">
-                    <div class="text-xs text-purple-300 font-semibold uppercase tracking-wider mb-1">Active Catalog SKUs</div>
-                    <div class="text-3xl md:text-4xl font-bold text-white brand-font" id="dash-skus">0</div>
+
+                <div class="metric-card p-3">
+                    <div
+                        class="flex items-center justify-between text-[10px] text-blue-300 uppercase tracking-wider font-semibold">
+                        <span>Volume Shipped</span>
+                        <span class="text-slate-400 font-mono text-[10px]">Units</span>
+                    </div>
+                    <div class="text-xl font-bold text-white brand-font mt-0.5" id="dash-sold">0</div>
+                    <div class="text-[9px] text-slate-500">Outbound movement</div>
+                </div>
+
+                <div class="metric-card p-3 border-amber-500/25">
+                    <div
+                        class="flex items-center justify-between text-[10px] text-amber-300 uppercase tracking-wider font-semibold">
+                        <span>Asset Valuation</span>
+                        <span class="text-amber-400 font-mono text-[10px]">Cost Basis</span>
+                    </div>
+                    <div class="text-xl font-bold text-amber-300 brand-font mt-0.5" id="dash-valuation">$0.00</div>
+                    <div class="text-[9px] text-slate-500">Current inventory</div>
+                </div>
+
+                <div class="metric-card p-3 border-purple-500/25 col-span-2 sm:col-span-1">
+                    <div
+                        class="flex items-center justify-between text-[10px] text-purple-300 uppercase tracking-wider font-semibold">
+                        <span>Active SKUs</span>
+                        <span class="text-purple-400 font-mono text-[10px]">Catalog</span>
+                    </div>
+                    <div class="text-xl font-bold text-white brand-font mt-0.5" id="dash-skus">0</div>
+                    <div class="text-[9px] text-slate-500">Active lines</div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Top Selling Products Chart -->
-                <div class="glass-card p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold brand-font text-blue-100">Top Selling Products</h3>
-                        <button onclick="fetchDashboard()" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800">↻ Refresh</button>
+            <!-- 2. CHARTS SECTION (ความสูงลดลงเหลือ h-44 เพื่อประหยัดพื้นที่) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                <!-- Sales Analytics -->
+                <div class="glass-card p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-semibold brand-font text-blue-100">Sales Analytics</h3>
+                        <div class="flex items-center gap-2">
+                            <select id="chart-type-selector" onchange="changeChartType(this.value)"
+                                class="text-[11px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-2 py-0.5 outline-none">
+                                <option value="doughnut">Share (Doughnut)</option>
+                                <option value="bar">Volume (Bar)</option>
+                                <option value="line">Trend (Line)</option>
+                            </select>
+                            <button onclick="fetchDashboard()"
+                                class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 transition">
+                                ↻ Refresh
+                            </button>
+                        </div>
                     </div>
-                    <div class="h-64 relative w-full">
+                    <div class="h-36 relative w-full">
                         <canvas id="salesChart"></canvas>
                     </div>
                 </div>
-                
-                <!-- Scrollable Recent Sales Table -->
-                <div class="glass-card p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold brand-font text-blue-100">Recent Sales Activity</h3>
-                        <span class="text-xs text-slate-400">Scrollable (Up to 20)</span>
+
+                <!-- Revenue Trends -->
+                <div class="glass-card p-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                        <div>
+                            <h3 class="text-sm font-semibold brand-font text-blue-100">Revenue Trends</h3>
+                            <p class="text-[10px] text-slate-400">Periodic revenue distribution</p>
+                        </div>
                     </div>
-                    <div class="overflow-y-auto" style="max-height: 250px;">
-                        <table>
-                            <thead class="sticky top-0" style="background: rgba(30, 41, 59, 0.98);">
-                                <tr><th>Item</th><th>Qty</th><th>Revenue</th><th>Time</th></tr>
+                    <div class="h-36 relative w-full">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TRANSACTION & STATUS SECTION -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+                <!-- Live Transaction Stream (ลด max-height เหลือ 170px) -->
+                <div class="glass-card p-4 lg:col-span-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <h3 class="text-sm font-semibold brand-font text-blue-100">Live Transaction Stream</h3>
+                            <p class="text-[10px] text-slate-400">Audited transaction ledger records</p>
+                        </div>
+                        <span
+                            class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
+                            Limit: 20
+                        </span>
+                    </div>
+                    <div class="overflow-y-auto" style="max-height: 170px;">
+                        <table class="w-full">
+                            <thead class="sticky top-0 bg-slate-900/95 backdrop-blur text-[11px]">
+                                <tr>
+                                    <th class="py-1">Item Description</th>
+                                    <th class="py-1">Qty</th>
+                                    <th class="py-1">Net Revenue</th>
+                                    <th class="py-1">Timestamp</th>
+                                </tr>
                             </thead>
-                            <tbody id="recent-sales-table"></tbody>
+                            <tbody id="recent-sales-table" class="text-xs divide-y divide-slate-800/40"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Inventory Status -->
+                <div class="glass-card p-4 lg:col-span-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-semibold brand-font text-slate-100">Inventory Status</h3>
+                            <span
+                                class="text-[9px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Operational</span>
+                        </div>
+                        <div class="space-y-2 mt-2">
+                            <div class="p-2 rounded-lg bg-slate-900/70 border border-slate-800">
+                                <div class="flex justify-between text-[11px] mb-1">
+                                    <span class="text-slate-400">Stock Turnover Health</span>
+                                    <span class="text-emerald-400 font-mono font-medium">94%</span>
+                                </div>
+                                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 94%"></div>
+                                </div>
+                            </div>
+
+                            <div class="p-2 rounded-lg bg-slate-900/70 border border-slate-800">
+                                <div class="flex justify-between text-[11px] mb-1">
+                                    <span class="text-slate-400">Catalog Storage Capacity</span>
+                                    <span class="text-blue-400 font-mono font-medium">68%</span>
+                                </div>
+                                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-blue-500 h-full rounded-full" style="width: 68%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="switchTab('management')"
+                        class="w-full mt-2 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center justify-center gap-1.5">
+                        <span>Open Movement Ledger</span>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. SKU PERFORMANCE TABLE (ลด padding แถวตารางให้อ่านง่ายแต่กระชับ) -->
+            <div class="glass-card p-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+                    <div>
+                        <h3 class="text-sm font-semibold brand-font text-white">SKU Performance & Margin Yield</h3>
+                        <p class="text-[10px] text-slate-400">Unit-level contribution margin and velocity classification
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input id="sku-table-search" oninput="filterProfitabilityTable()" type="text"
+                            placeholder="Filter SKU or name..."
+                            class="text-xs bg-slate-900/80 border border-slate-700/80 rounded-lg px-2.5 py-1 text-white outline-none w-44 focus:border-blue-500 transition" />
+                    </div>
+                </div>
+                <div class="overflow-x-auto" style="max-height: 180px;">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
+                            <tr
+                                class="border-b border-slate-700/50 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                                <th class="py-1.5">SKU & Item Name</th>
+                                <th class="py-1.5 text-right">Units Sold</th>
+                                <th class="py-1.5 text-right">Gross Rev</th>
+                                <th class="py-1.5 text-right">Est. Profit</th>
+                                <th class="py-1.5 text-right">Margin %</th>
+                                <th class="py-1.5 text-center">Velocity</th>
+                            </tr>
+                        </thead>
+                        <tbody id="profitability-table" class="divide-y divide-slate-800/50 text-xs"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
         <!-- STOCK MANAGEMENT VIEW -->
-        <div id="view-management" class="hidden space-y-6 max-w-6xl">
-            
+        <div id="view-management" class="hidden space-y-6 w-full max-w-[1600px] mx-auto">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Log Movement Form -->
-                <div class="glass-card p-6" id="movement-card" style="grid-column: span 2;">
-                    <h3 class="text-xl font-semibold mb-6 brand-font text-blue-100">Log Inventory Movement</h3>
-                    
+                <div class="glass-card p-6" id="movement-card" style="grid-column: span 2">
+                    <h3 class="text-xl font-semibold mb-6 brand-font text-blue-100">
+                        Log Inventory Movement
+                    </h3>
+
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Product</label>
+                                <label
+                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Product</label>
                                 <select id="evt-item" class="input-field" onchange="onItemSelectChange()"></select>
                             </div>
-                            
+
                             <div>
-                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Action Type</label>
+                                <label
+                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Action
+                                    Type</label>
                                 <select id="evt-type" class="input-field" onchange="updateQtyLabel()">
                                     <option value="SALE">💸 Sale (Deduct)</option>
                                     <option value="RESTOCK">📦 Restock (Add)</option>
-                                    <option value="ADJUSTMENT">⚖️ Adjustment (Set Actual)</option>
+                                    <option value="ADJUSTMENT">
+                                        ⚖️ Adjustment (Set Actual)
+                                    </option>
                                     <option value="WASTE">🗑️ Waste (Deduct)</option>
                                     <option value="RETURN">↩️ Return (Add)</option>
                                 </select>
                             </div>
                             <div>
-                                <label id="lbl-qty" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Quantity</label>
+                                <label id="lbl-qty"
+                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Quantity</label>
                                 <input id="evt-qty" type="number" min="1" value="1" class="input-field" />
                             </div>
-                            
+
                             <div>
-                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Unit Price ($)</label>
+                                <label
+                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Unit
+                                    Price ($)</label>
                                 <input id="evt-price" type="number" step="0.01" class="input-field" />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Note (Optional)</label>
+                                <label
+                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Note
+                                    (Optional)</label>
                                 <input id="evt-note" placeholder="E.g. Daily shift audit" class="input-field" />
                             </div>
                         </div>
                         <button onclick="logEvent()" class="btn-primary w-full mt-2">
                             <span>Execute Movement</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
                         </button>
                     </div>
-                    
+
                     <div class="mt-6 border-t border-slate-700/60 pt-4">
                         <div class="flex justify-between items-center mb-2">
-                            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Activity Log</h4>
-                            <button onclick="clearLogs()" class="text-xs text-slate-500 hover:text-slate-300">Clear</button>
+                            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                                Activity Log
+                            </h4>
+                            <button onclick="clearLogs()" class="text-xs text-slate-500 hover:text-slate-300">
+                                Clear
+                            </button>
                         </div>
                         <div id="log"></div>
                     </div>
@@ -362,30 +419,44 @@
                 <!-- Register Product Form (Owner & Manager Only) -->
                 <div id="card-register-product" class="glass-card p-6 border border-purple-500/20">
                     <div class="flex items-center gap-2 mb-6">
-                        <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-300">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        <div
+                            class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-300">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
                         </div>
-                        <h3 class="text-xl font-semibold brand-font text-purple-200">Register Product</h3>
+                        <h3 class="text-xl font-semibold brand-font text-purple-200">
+                            Register Product
+                        </h3>
                     </div>
-                    
+
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">SKU Code</label>
+                            <label
+                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">SKU
+                                Code</label>
                             <input id="item-sku" placeholder="E.g. SNK-001" class="input-field" />
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Product Name</label>
+                            <label
+                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Product
+                                Name</label>
                             <input id="item-name" placeholder="E.g. Green Tea 500ml" class="input-field" />
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Category</label>
+                            <label
+                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Category</label>
                             <input id="item-cat" placeholder="E.g. Beverages" class="input-field" />
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Default Cost ($)</label>
+                            <label
+                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Default
+                                Cost ($)</label>
                             <input id="item-cost" type="number" step="0.01" value="1.50" class="input-field" />
                         </div>
-                        <button onclick="createItem()" class="btn-primary w-full !bg-purple-600 hover:!bg-purple-500 mt-2">
+                        <button onclick="createItem()"
+                            class="btn-primary w-full !bg-purple-600 hover:!bg-purple-500 mt-2">
                             <span>Add to Catalog</span>
                         </button>
                     </div>
@@ -396,10 +467,15 @@
             <div class="glass-card p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
-                        <h3 class="text-xl font-semibold brand-font text-emerald-100">Live Inventory Snapshot</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Real-time stock quantities calculated from event ledger</p>
+                        <h3 class="text-xl font-semibold brand-font text-emerald-100">
+                            Live Inventory Snapshot
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Real-time stock quantities calculated from event ledger
+                        </p>
                     </div>
-                    <button onclick="fetchStock()" class="btn-primary text-xs !px-4 !py-2 !bg-slate-700 hover:!bg-slate-600">
+                    <button onclick="fetchStock()"
+                        class="btn-primary text-xs !px-4 !py-2 !bg-slate-700 hover:!bg-slate-600">
                         <span>↻ Sync Data</span>
                     </button>
                 </div>
@@ -419,417 +495,10 @@
                     </table>
                 </div>
             </div>
-            
         </div>
     </main>
 
-    <script>
-        // Check Authentication Immediately
-        const token = localStorage.getItem('nextrack_token');
-        const userStr = localStorage.getItem('nextrack_user');
-        let currentUser = null;
-        try {
-            currentUser = userStr ? JSON.parse(userStr) : null;
-        } catch (e) {
-            currentUser = null;
-        }
-
-        if (!token || !currentUser) {
-            localStorage.removeItem('nextrack_token');
-            localStorage.removeItem('nextrack_user');
-            window.location.href = '/login.html';
-        }
-
-        const DEFAULT_STORE_ID = "00000000-0000-0000-0000-000000000001";
-        let salesChart = null;
-        let cachedItems = [];
-
-        const userRole = (currentUser?.role || 'cashier').toLowerCase();
-
-        function initApp() {
-            if (!currentUser) return;
-            // Setup User Info on Sidebar
-            const nameEl = document.getElementById('user-display-name');
-            if (nameEl) nameEl.innerText = currentUser.displayName || currentUser.email;
-            
-            const bizEl = document.getElementById('user-business-name');
-            if (bizEl) bizEl.innerText = currentUser.businessName || 'HQ Store';
-            
-            const badgeEl = document.getElementById('user-role-badge');
-            const pillEl = document.getElementById('role-pill');
-            
-            if (badgeEl) {
-                badgeEl.innerText = userRole.toUpperCase();
-                badgeEl.className = `role-badge role-${userRole}`;
-            }
-            if (pillEl) {
-                pillEl.innerText = userRole.toUpperCase();
-                pillEl.className = `hidden md:inline-block role-badge role-${userRole}`;
-            }
-
-            // Cashier Role Restrictions
-            if (userRole === 'cashier') {
-                // Hide Dashboard tab
-                const navDash = document.getElementById('nav-dashboard');
-                if (navDash) navDash.classList.add('hidden');
-                // Hide Register Product Card
-                const regCard = document.getElementById('card-register-product');
-                if (regCard) regCard.classList.add('hidden');
-                // Expand movement card to full width
-                const movCard = document.getElementById('movement-card');
-                if (movCard) movCard.style.gridColumn = 'span 3';
-            }
-        }
-
-        // Authenticated fetch wrapper
-        async function authFetch(url, options = {}) {
-            options.headers = options.headers || {};
-            options.headers['Authorization'] = `Bearer ${token}`;
-            if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
-                options.headers['Content-Type'] = 'application/json';
-            }
-
-            const res = await fetch(url, options);
-            if (res.status === 401) {
-                // Token expired or invalid -> logout
-                localStorage.removeItem('nextrack_token');
-                localStorage.removeItem('nextrack_user');
-                window.location.href = '/login.html';
-                throw new Error('Session expired, please log in again.');
-            }
-            return res;
-        }
-
-        function logout() {
-            localStorage.removeItem('nextrack_token');
-            localStorage.removeItem('nextrack_user');
-            window.location.href = '/login.html';
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            sidebar.classList.toggle('open');
-            backdrop.classList.toggle('active');
-        }
-
-        function switchTab(tabId) {
-            // Cashier cannot access dashboard
-            if (userRole === 'cashier' && tabId === 'dashboard') {
-                tabId = 'management';
-            }
-
-            document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
-            const activeNav = document.getElementById(`nav-${tabId}`);
-            if (activeNav) activeNav.classList.add('active');
-            
-            document.getElementById('view-dashboard').classList.add('hidden');
-            document.getElementById('view-management').classList.add('hidden');
-            
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            const titles = {
-                'dashboard': 'Dashboard Overview',
-                'management': 'Stock Management & Operations'
-            };
-            document.getElementById('page-title').innerText = titles[tabId];
-            
-            if (tabId === 'dashboard') fetchDashboard();
-            if (tabId === 'management') fetchStock();
-
-            // Auto close mobile sidebar
-            if (window.innerWidth <= 768) {
-                const sidebar = document.getElementById('sidebar');
-                const backdrop = document.getElementById('sidebar-backdrop');
-                sidebar.classList.remove('open');
-                backdrop.classList.remove('active');
-            }
-        }
-
-        function updateQtyLabel() {
-            const type = document.getElementById('evt-type').value;
-            const lbl = document.getElementById('lbl-qty');
-            if (type === 'ADJUSTMENT') {
-                lbl.innerText = 'Actual Shelf Count (Set Total)';
-                lbl.classList.add('text-amber-400');
-            } else {
-                lbl.innerText = 'Quantity';
-                lbl.classList.remove('text-amber-400');
-            }
-        }
-
-        function onItemSelectChange() {
-            const select = document.getElementById('evt-item');
-            if (!select || select.selectedIndex < 0) return;
-            const selected = select.options[select.selectedIndex];
-            const cost = selected.getAttribute('data-cost');
-            if (cost) {
-                document.getElementById('evt-price').value = cost;
-            }
-        }
-
-        function log(msg, ok = true) {
-            const el = document.getElementById('log');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry ' + (ok ? 'log-ok' : 'log-err');
-            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            entry.innerHTML = `<span>${msg}</span> <span class="text-xs opacity-75 font-mono">${time}</span>`;
-            el.prepend(entry);
-        }
-
-        function clearLogs() {
-            document.getElementById('log').innerHTML = '';
-        }
-
-        function renderChart(salesData) {
-            const canvas = document.getElementById('salesChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            if (salesChart) {
-                salesChart.destroy();
-            }
-
-            if (!salesData || salesData.length === 0) {
-                salesData = [{name: 'No sales yet', total_qty: 0}];
-            }
-
-            const labels = salesData.map(d => d.name);
-            const data = salesData.map(d => parseInt(d.total_qty, 10));
-
-            salesChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.85)',
-                            'rgba(16, 185, 129, 0.85)',
-                            'rgba(139, 92, 246, 0.85)',
-                            'rgba(245, 158, 11, 0.85)',
-                            'rgba(236, 72, 153, 0.85)'
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right', labels: { color: '#cbd5e1', font: { family: 'Inter' } } }
-                    },
-                    cutout: '70%'
-                }
-            });
-        }
-
-        async function fetchDashboard() {
-            if (userRole === 'cashier') return;
-            try {
-                const res = await authFetch('/api/dashboard');
-                if (!res.ok) return;
-                const data = await res.json();
-                
-                document.getElementById('dash-revenue').innerText = '$' + (data.revenue).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                document.getElementById('dash-sold').innerText = data.sold.toLocaleString();
-                document.getElementById('dash-skus').innerText = data.active_skus.toLocaleString();
-                
-                const tbody = document.getElementById('recent-sales-table');
-                if (!data.recent_sales || data.recent_sales.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500 py-6">No sales recorded yet.</td></tr>';
-                } else {
-                    tbody.innerHTML = data.recent_sales.map(s =>
-                        `<tr>
-                            <td class="font-medium text-white">${s.item_name}</td>
-                            <td>${Math.abs(s.quantity)}</td>
-                            <td class="text-emerald-400 font-medium">+$${(Math.abs(s.quantity) * Number(s.unit_price)).toFixed(2)}</td>
-                            <td class="text-xs text-slate-400">${new Date(s.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                        </tr>`
-                    ).join('');
-                }
-
-                renderChart(data.sales_by_item);
-            } catch (e) {
-                console.error('Error fetching dashboard:', e);
-            }
-        }
-
-        async function createItem() {
-            try {
-                const sku = document.getElementById('item-sku').value.trim();
-                const name = document.getElementById('item-name').value.trim();
-                const category = document.getElementById('item-cat').value.trim();
-                const cost = parseFloat(document.getElementById('item-cost').value);
-
-                if (!sku || !name) {
-                    log('Please provide both SKU and Product Name', false);
-                    return;
-                }
-
-                const res = await authFetch('/api/items', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        sku,
-                        name,
-                        category: category || null,
-                        unit_cost_default: isNaN(cost) ? 0 : cost,
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) {
-                    const detail = data.details ? data.details.map(d => d.message).join(', ') : data.error;
-                    log('Error creating product: ' + detail, false);
-                    return;
-                }
-
-                log(`Success! Product "${data.name}" (${data.sku}) added to catalog.`);
-                document.getElementById('item-sku').value = '';
-                document.getElementById('item-name').value = '';
-                document.getElementById('item-cat').value = '';
-                
-                await fetchItems();
-                await fetchStock();
-            } catch (e) {
-                log('Network error: ' + e.message, false);
-            }
-        }
-
-        async function logEvent() {
-            try {
-                let qty = parseInt(document.getElementById('evt-qty').value, 10);
-                const eventType = document.getElementById('evt-type').value;
-                const price = parseFloat(document.getElementById('evt-price').value) || 0;
-                const itemId = document.getElementById('evt-item').value;
-                
-                if (!itemId) {
-                    log('Please select a product from catalog first', false);
-                    return;
-                }
-
-                if (isNaN(qty) && eventType !== 'ADJUSTMENT') {
-                    log('Please enter a valid quantity', false);
-                    return;
-                }
-
-                // Signs logic
-                if (eventType === 'SALE' || eventType === 'WASTE') {
-                    qty = -Math.abs(qty);
-                } else if (eventType === 'RESTOCK' || eventType === 'RETURN') {
-                    qty = Math.abs(qty);
-                }
-                
-                const body = {
-                    item_id: itemId,
-                    store_id: DEFAULT_STORE_ID,
-                    event_type: eventType,
-                    quantity: qty,
-                    unit_price: price,
-                    note: document.getElementById('evt-note').value.trim() || null,
-                    source: 'MANUAL',
-                };
-
-                const res = await authFetch('/api/events', {
-                    method: 'POST',
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    const detail = data.details ? data.details.map(d => d.message).join(', ') : data.error;
-                    log('Failed: ' + (detail || 'Unknown Error'), false);
-                    return;
-                }
-                
-                if (data.message) {
-                    log(data.message, true);
-                } else {
-                    const actionWord = eventType === 'ADJUSTMENT' ? 'adjusted by' : 'logged';
-                    log(`Success: ${eventType} ${actionWord} ${Math.abs(data.quantity)} units.`);
-                }
-                
-                fetchStock();
-                if (userRole !== 'cashier') {
-                    fetchDashboard();
-                }
-            } catch (e) {
-                log('Network error: ' + e.message, false);
-            }
-        }
-
-        async function fetchItems() {
-            try {
-                const res = await authFetch('/api/items?limit=100');
-                if (!res.ok) return;
-                const json = await res.json();
-                cachedItems = json.data || [];
-                
-                const select = document.getElementById('evt-item');
-                if (cachedItems.length === 0) {
-                    select.innerHTML = '<option value="">(No products in catalog)</option>';
-                    return;
-                }
-
-                select.innerHTML = cachedItems.map(i =>
-                    `<option value="${i.id}" data-cost="${i.unit_cost_default}">${i.name} (${i.sku})</option>`
-                ).join('');
-                
-                // Set initial price to selected item's default cost
-                onItemSelectChange();
-            } catch (e) {
-                console.error('Failed to fetch items:', e);
-            }
-        }
-
-        // Optimized fetchStock — utilizes current_stock_snapshot joined with items (no redundant fetch!)
-        async function fetchStock() {
-            try {
-                const res = await authFetch('/api/stock?limit=100');
-                if (!res.ok) return;
-                const json = await res.json();
-                const stockData = json.data || [];
-                
-                const tbody = document.getElementById('stock-table');
-                
-                if (stockData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-500 py-8">No inventory data available yet.</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = stockData.map(item => {
-                    const qty = item.quantity || 0;
-                    let status = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">In Stock</span>`;
-                    if (qty <= 0) {
-                        status = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/25">Out of Stock</span>`;
-                    } else if (qty < 5) {
-                        status = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/25">Low Stock</span>`;
-                    }
-                    
-                    return `<tr>
-                        <td class="font-mono text-xs text-slate-400">${item.sku}</td>
-                        <td class="font-medium text-white">${item.item_name}</td>
-                        <td>${item.category || '—'}</td>
-                        <td class="font-mono text-slate-300">$${Number(item.unit_cost_default || 0).toFixed(2)}</td>
-                        <td class="text-base font-bold ${qty <= 0 ? 'text-red-400' : 'text-slate-100'}">${qty}</td>
-                        <td>${status}</td>
-                    </tr>`;
-                }).join('');
-            } catch (e) {
-                console.error('Failed to fetch stock snapshot:', e);
-            }
-        }
-
-        // Initial Load
-        (async function init() {
-            initApp();
-            await fetchItems();
-            if (userRole === 'cashier') {
-                switchTab('management');
-            } else {
-                switchTab('dashboard');
-            }
-        })();
-    </script>
+    <script src="js/app.js"></script>
 </body>
+
 </html>
