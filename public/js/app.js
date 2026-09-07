@@ -15,48 +15,45 @@ if (!token || !currentUser) {
 
 const DEFAULT_STORE_ID = "00000000-0000-0000-0000-000000000001";
 let salesChart = null;
+let trendChart = null;
 let cachedItems = [];
+let rawSalesData = [];
+let rawSalesActivity = [];
+let calculatedStatsCache = [];
+let cachedDashboardRaw = null;
+let cachedStockRaw = [];
+let currentGlobalPeriod = 'all';
+let currentTrendPeriod = 'day';
+let currentChartType = 'doughnut';
 
 const userRole = (currentUser?.role || 'cashier').toLowerCase();
 
-let currentGlobalPeriod = 'all'; // 'day' | 'month' | 'year' | 'all'
-let cachedDashboardRaw = null;   // เก็บข้อมูลดิบจาก API ไว้คำนวณซ้ำโดยไม่ต้องยิง request ใหม่
-let cachedStockRaw = [];
-
-// ฟังก์ชันสลับช่วงเวลา Global
 function setGlobalPeriod(period) {
     currentGlobalPeriod = period;
-
-    // อัปเดตสไตล์ปุ่ม
     ['day', 'month', 'year', 'all'].forEach(p => {
         const btn = document.getElementById(`global-filter-${p}`);
         if (btn) {
-            if (p === period) {
-                btn.className = 'px-3 py-1 rounded font-medium text-white bg-blue-600 transition';
-            } else {
-                btn.className = 'px-3 py-1 rounded font-medium text-slate-400 hover:text-white transition';
-            }
+            btn.className = (p === period)
+                ? 'px-3 py-1 rounded text-white bg-blue-600 font-medium transition'
+                : 'px-3 py-1 rounded text-slate-400 hover:text-white transition';
         }
     });
-
     applyGlobalFilter();
 }
 
-// ตรวจสอบว่า timestamp อยู่ในช่วงเวลาที่เลือกหรือไม่
 function isWithinPeriod(timestamp, period) {
     if (period === 'all') return true;
-
     const target = new Date(timestamp);
     const now = new Date();
 
     if (period === 'day') {
         return target.getFullYear() === now.getFullYear() &&
-               target.getMonth() === now.getMonth() &&
-               target.getDate() === now.getDate();
+            target.getMonth() === now.getMonth() &&
+            target.getDate() === now.getDate();
     }
     if (period === 'month') {
         return target.getFullYear() === now.getFullYear() &&
-               target.getMonth() === now.getMonth();
+            target.getMonth() === now.getMonth();
     }
     if (period === 'year') {
         return target.getFullYear() === now.getFullYear();
@@ -64,16 +61,13 @@ function isWithinPeriod(timestamp, period) {
     return true;
 }
 
-// ประมวลผลและอัปเดตทุก Element บน Dashboard
 function applyGlobalFilter() {
     if (!cachedDashboardRaw) return;
 
-    // 1. กรองรายการขายตามช่วงเวลาที่เลือก
-    const filteredSales = (cachedDashboardRaw.recent_sales || []).filter(s => 
+    const filteredSales = (cachedDashboardRaw.recent_sales || []).filter(s =>
         isWithinPeriod(s.timestamp, currentGlobalPeriod)
     );
 
-    // 2. รวมยอด Gross Revenue และ Units Sold ประจำช่วงเวลา
     let periodRevenue = 0;
     let periodSold = 0;
     const itemSalesMap = {};
@@ -84,44 +78,56 @@ function applyGlobalFilter() {
         periodRevenue += rev;
         periodSold += qty;
 
-        // จัดกลุ่มสำหรับ Sales Analytics Chart
         if (!itemSalesMap[s.item_name]) {
             itemSalesMap[s.item_name] = { name: s.item_name, total_qty: 0 };
         }
         itemSalesMap[s.item_name].total_qty += qty;
     });
 
-    // 3. อัปเดต KPI Cards
-    document.getElementById('dash-revenue').innerText = '$' + periodRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    document.getElementById('dash-sold').innerText = periodSold.toLocaleString('en-US');
-    document.getElementById('dash-skus').innerText = (cachedDashboardRaw.active_skus || 0).toLocaleString('en-US');
+    const elRev = document.getElementById('dash-revenue');
+    const elSold = document.getElementById('dash-sold');
+    const elSkus = document.getElementById('dash-skus');
+    if (elRev) elRev.innerText = '$' + periodRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (elSold) elSold.innerText = periodSold.toLocaleString('en-US');
+    if (elSkus) elSkus.innerText = (cachedDashboardRaw.active_skus || 0).toLocaleString('en-US');
 
-    // 4. อัปเดตตาราง Live Transaction Stream
     const tbody = document.getElementById('recent-sales-table');
     if (tbody) {
         if (filteredSales.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-slate-500 py-6 text-xs">No transactions in this period.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-stone-500 h-[120px] align-middle text-xs font-mono">No transactions recorded for this period.</td></tr>';
         } else {
             tbody.innerHTML = filteredSales.map(s => {
                 const saleDate = new Date(s.timestamp);
                 const formattedDate = saleDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 const formattedTime = saleDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-                return `<tr>
-                    <td class="font-medium text-white">${s.item_name}</td>
-                    <td>${Math.abs(s.quantity)}</td>
-                    <td class="text-emerald-400 font-medium">+$${(Math.abs(s.quantity) * Number(s.unit_price)).toFixed(2)}</td>
-                    <td class="text-xs text-slate-400 font-mono">${formattedDate}, ${formattedTime}</td>
-                </tr>`;
+                // ดึง 8 ตัวแรกของ UUID มาแสดงเป็น Ref No. สั้นๆ เช่น #6143052d
+                const shortTxId = s.id ? s.id.substring(0, 8) : '--------';
+                const shortItemId = s.item_id ? s.item_id.substring(0, 8) : '';
+
+                return `<tr class="hover:bg-stone-800/30 transition group">
+    <td class="py-2 text-left">
+        <div class="font-medium text-white truncate max-w-[200px]" title="${s.item_name}">${s.item_name}</div>
+        <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="text-[10px] font-mono text-stone-400 cursor-pointer hover:text-orange-400 transition" 
+                  title="Transaction UUID: ${s.id} (Click to copy)" 
+                  onclick="navigator.clipboard.writeText('${s.id}'); log('Copied Tx ID: ${shortTxId}', true);">
+                Tx #${shortTxId}
+            </span>
+            ${s.sku ? `<span class="text-[9px] font-mono text-stone-500">· ${s.sku}</span>` : ''}
+        </div>
+    </td>
+    <td class="py-2 text-right font-mono text-stone-300 align-top pt-2.5">${Math.abs(s.quantity)}</td>
+    <td class="py-2 text-right font-mono font-medium text-emerald-400 align-top pt-2.5">+$${(Math.abs(s.quantity) * Number(s.unit_price)).toFixed(2)}</td>
+    <td class="py-2 text-right font-mono text-[11px] text-stone-400 pr-2 whitespace-nowrap align-top pt-2.5">${formattedDate}, ${formattedTime}</td>
+</tr>`;
             }).join('');
         }
     }
 
-    // 5. อัปเดต กราฟ Sales Analytics (ตามสินค้าที่ขายได้ในช่วงเวลาที่เลือก)
     rawSalesData = Object.values(itemSalesMap);
     renderChart(rawSalesData);
 
-    // ปรับมุมมองแกนเวลาของ Trend Chart ให้สัมพันธ์กับ Global Filter
     if (currentGlobalPeriod === 'all' || currentGlobalPeriod === 'day') {
         currentTrendPeriod = 'day';
     } else if (currentGlobalPeriod === 'month') {
@@ -130,11 +136,8 @@ function applyGlobalFilter() {
         currentTrendPeriod = 'year';
     }
 
-    // ส่งรายการขายทั้งหมดเข้า Trend Chart เพื่อให้เห็นแท่งแนวโน้มเปรียบเทียบย้อนหลัง
     rawSalesActivity = cachedDashboardRaw.recent_sales || [];
     renderTrendChart();
-
-    // 6. อัปเดต ตาราง SKU Performance & Profitability
     calculateProductInsights(filteredSales, cachedStockRaw, cachedItems);
 }
 
@@ -147,24 +150,16 @@ function initApp() {
     if (bizEl) bizEl.innerText = currentUser.businessName || 'HQ Store';
 
     const badgeEl = document.getElementById('user-role-badge');
-    const pillEl = document.getElementById('role-pill');
-
     if (badgeEl) {
         badgeEl.innerText = userRole.toUpperCase();
         badgeEl.className = `role-badge role-${userRole}`;
-    }
-    if (pillEl) {
-        pillEl.innerText = userRole.toUpperCase();
-        pillEl.className = `hidden md:inline-block role-badge role-${userRole}`;
     }
 
     if (userRole === 'cashier') {
         const navDash = document.getElementById('nav-dashboard');
         if (navDash) navDash.classList.add('hidden');
-        const regCard = document.getElementById('card-register-product');
-        if (regCard) regCard.classList.add('hidden');
-        const movCard = document.getElementById('movement-card');
-        if (movCard) movCard.style.gridColumn = 'span 3';
+        const regTab = document.getElementById('tab-reg-btn');
+        if (regTab) regTab.classList.add('hidden');
     }
 }
 
@@ -194,8 +189,8 @@ function logout() {
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
-    sidebar.classList.toggle('open');
-    backdrop.classList.toggle('active');
+    if (sidebar) sidebar.classList.toggle('open');
+    if (backdrop) backdrop.classList.toggle('active');
 }
 
 function switchTab(tabId) {
@@ -207,15 +202,20 @@ function switchTab(tabId) {
     const activeNav = document.getElementById(`nav-${tabId}`);
     if (activeNav) activeNav.classList.add('active');
 
-    document.getElementById('view-dashboard').classList.add('hidden');
-    document.getElementById('view-management').classList.add('hidden');
+    const viewDash = document.getElementById('view-dashboard');
+    const viewMgmt = document.getElementById('view-management');
+    if (viewDash) viewDash.classList.add('hidden');
+    if (viewMgmt) viewMgmt.classList.add('hidden');
 
-    document.getElementById(`view-${tabId}`).classList.remove('hidden');
+    const targetView = document.getElementById(`view-${tabId}`);
+    if (targetView) targetView.classList.remove('hidden');
+
     const titles = {
-        'dashboard': 'Dashboard Overview',
+        'dashboard': 'Daily Register & Sales',
         'management': 'Stock Management & Operations'
     };
-    document.getElementById('page-title').innerText = titles[tabId];
+    const titleEl = document.getElementById('page-title');
+    if (titleEl) titleEl.innerText = titles[tabId];
 
     if (tabId === 'dashboard') fetchDashboard();
     if (tabId === 'management') fetchStock();
@@ -223,14 +223,46 @@ function switchTab(tabId) {
     if (window.innerWidth <= 768) {
         const sidebar = document.getElementById('sidebar');
         const backdrop = document.getElementById('sidebar-backdrop');
-        sidebar.classList.remove('open');
-        backdrop.classList.remove('active');
+        if (sidebar) sidebar.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('active');
     }
+}
+
+function toggleStockSubTab(tab) {
+    const isLog = tab === 'log';
+    const logSection = document.getElementById('subview-log-movement');
+    const regSection = document.getElementById('subview-register-product');
+    const tabLogBtn = document.getElementById('tab-log-btn');
+    const tabRegBtn = document.getElementById('tab-reg-btn');
+
+    if (logSection) logSection.classList.toggle('hidden', !isLog);
+    if (regSection) regSection.classList.toggle('hidden', isLog);
+
+    if (tabLogBtn) {
+        tabLogBtn.className = isLog
+            ? 'flex-1 py-1 rounded bg-slate-800 text-white font-medium'
+            : 'flex-1 py-1 rounded text-slate-400 hover:text-white';
+    }
+    if (tabRegBtn) {
+        tabRegBtn.className = !isLog
+            ? 'flex-1 py-1 rounded bg-slate-800 text-white font-medium'
+            : 'flex-1 py-1 rounded text-slate-400 hover:text-white';
+    }
+}
+
+function filterStockTable() {
+    const query = (document.getElementById('stock-search')?.value || '').toLowerCase();
+    const rows = document.querySelectorAll('#stock-table tr');
+    rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(query) ? '' : 'none';
+    });
 }
 
 function updateQtyLabel() {
     const type = document.getElementById('evt-type').value;
     const lbl = document.getElementById('lbl-qty');
+    if (!lbl) return;
     if (type === 'ADJUSTMENT') {
         lbl.innerText = 'Actual Shelf Count (Set Total)';
         lbl.classList.add('text-amber-400');
@@ -267,14 +299,10 @@ function log(msg, ok = true) {
 }
 
 function clearLogs() {
-    document.getElementById('log').innerHTML = '';
+    const el = document.getElementById('log');
+    if (el) el.innerHTML = '';
 }
 
-// เพิ่มตัวแปร global เก็บข้อมูลสำหรับกราฟ
-let currentChartType = 'doughnut';
-let rawSalesData = [];
-
-// ฟังก์ชันสลับรูปแบบกราฟเมื่อกดเลือก Dropdown
 function changeChartType(type) {
     currentChartType = type;
     renderChart(rawSalesData);
@@ -296,15 +324,7 @@ function renderChart(salesData) {
     const labels = salesData.map(d => d.name);
     const data = salesData.map(d => parseInt(d.total_qty, 10));
 
-    // ชุดสีมาตรฐานสำหรับธีม
-    const palette = [
-        'rgba(59, 130, 246, 0.85)',
-        'rgba(16, 185, 129, 0.85)',
-        'rgba(139, 92, 246, 0.85)',
-        'rgba(245, 158, 11, 0.85)',
-        'rgba(236, 72, 153, 0.85)'
-    ];
-
+    const palette = ['#2563eb', '#10b981', '#f59e0b', '#6366f1', '#64748b'];
     let chartConfig = {};
 
     if (currentChartType === 'doughnut') {
@@ -323,7 +343,7 @@ function renderChart(salesData) {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'right', labels: { color: '#cbd5e1', font: { family: 'Inter' } } }
+                    legend: { position: 'right', labels: { color: '#a39a8a', font: { family: 'IBM Plex Sans' } } }
                 },
                 cutout: '70%'
             }
@@ -337,25 +357,16 @@ function renderChart(salesData) {
                     label: 'Units Sold',
                     data: data,
                     backgroundColor: palette,
-                    borderRadius: 6
+                    borderRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, precision: 0 }
-                    }
+                    x: { grid: { display: false }, ticks: { color: '#a39a8a', font: { family: 'IBM Plex Sans', size: 11 } } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a39a8a', font: { family: 'IBM Plex Mono', size: 11 }, precision: 0 } }
                 }
             }
         };
@@ -367,30 +378,21 @@ function renderChart(salesData) {
                 datasets: [{
                     label: 'Units Sold',
                     data: data,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    borderColor: '#c2661c',
+                    backgroundColor: 'rgba(194, 102, 28, 0.15)',
                     fill: true,
-                    tension: 0.35,
-                    pointBackgroundColor: '#60a5fa',
+                    tension: 0.3,
+                    pointBackgroundColor: '#e2a066',
                     pointRadius: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, precision: 0 }
-                    }
+                    x: { grid: { display: false }, ticks: { color: '#a39a8a', font: { family: 'IBM Plex Sans', size: 11 } } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a39a8a', font: { family: 'IBM Plex Mono', size: 11 }, precision: 0 } }
                 }
             }
         };
@@ -398,10 +400,6 @@ function renderChart(salesData) {
 
     salesChart = new Chart(ctx, chartConfig);
 }
-
-let trendChart = null;
-let currentTrendPeriod = 'day'; // 'day' | 'month' | 'year'
-let rawSalesActivity = [];
 
 function renderTrendChart() {
     const canvas = document.getElementById('trendChart');
@@ -412,9 +410,7 @@ function renderTrendChart() {
         trendChart.destroy();
     }
 
-    // 1. เรียงลำดับรายการขายจาก เก่าสุด -> ใหม่สุด ก่อนนำไปจัดกลุ่ม
     const sortedSales = [...rawSalesActivity].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
     const aggregated = {};
 
     sortedSales.forEach(sale => {
@@ -422,10 +418,8 @@ function renderTrendChart() {
         let key = '';
 
         if (currentTrendPeriod === 'day') {
-            // วัน เดือนสากล เช่น "05 Sep", "06 Sep"
             key = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
         } else if (currentTrendPeriod === 'month') {
-            // เดือน ปีสากล เช่น "Aug 2026", "Sep 2026"
             key = dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
         } else if (currentTrendPeriod === 'year') {
             key = dateObj.getFullYear().toString();
@@ -450,12 +444,9 @@ function renderTrendChart() {
             datasets: [{
                 label: 'Revenue ($)',
                 data: data,
-                backgroundColor: 'rgba(16, 185, 129, 0.75)',
-                borderColor: '#10b981',
-                borderWidth: 1,
-                borderRadius: 6,
-                maxBarThickness: 45, // ปรับขนาดแท่งกราฟให้พอดี ไม่หนาหรือบางเกินไป
-                hoverBackgroundColor: 'rgba(52, 211, 153, 0.9)'
+                backgroundColor: '#2563eb',
+                borderRadius: 4,
+                maxBarThickness: 40
             }]
         },
         options: {
@@ -464,24 +455,15 @@ function renderTrendChart() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    callbacks: {
-                        label: (ctx) => ` Revenue: $${Number(ctx.raw).toFixed(2)}`
-                    }
+                    callbacks: { label: (ctx) => ` Revenue: $${Number(ctx.raw).toFixed(2)}` }
                 }
             },
             scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 } }
-                },
+                x: { grid: { display: false }, ticks: { color: '#a39a8a', font: { family: 'IBM Plex Sans', size: 11 } } },
                 y: {
                     beginAtZero: true,
                     grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { family: 'Inter', size: 11 },
-                        callback: (val) => `$${val}`
-                    }
+                    ticks: { color: '#a39a8a', font: { family: 'IBM Plex Mono', size: 11 }, callback: (val) => `$${val}` }
                 }
             }
         }
@@ -499,8 +481,6 @@ async function fetchDashboard() {
         if (!resDash.ok) return;
         cachedDashboardRaw = await resDash.json();
         cachedStockRaw = resStock.ok ? (await resStock.json()).data || [] : [];
-
-        // กระจายผลไปยัง Dashboard ตามตัวกรองปัจจุบัน
         applyGlobalFilter();
     } catch (e) {
         console.error('Error fetching dashboard:', e);
@@ -640,35 +620,44 @@ async function fetchStock() {
         const stockData = json.data || [];
 
         const tbody = document.getElementById('stock-table');
+        if (!tbody) return;
 
         if (stockData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-500 py-8">No inventory data available yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-stone-500 py-8 text-xs font-mono">No inventory data available yet.</td></tr>';
             return;
         }
 
         tbody.innerHTML = stockData.map(item => {
             const qty = item.quantity || 0;
-            let status = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">In Stock</span>`;
+            let qtyColor = 'text-emerald-400';
             if (qty <= 0) {
-                status = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/25">Out of Stock</span>`;
+                qtyColor = 'text-rose-400';
             } else if (qty < 5) {
-                status = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/25">Low Stock</span>`;
+                qtyColor = 'text-amber-400';
             }
 
-            return `<tr>
-                <td class="font-mono text-xs text-slate-400">${item.sku}</td>
-                <td class="font-medium text-white">${item.item_name}</td>
-                <td>${item.category || '—'}</td>
-                <td class="font-mono text-slate-300">$${Number(item.unit_cost_default || 0).toFixed(2)}</td>
-                <td class="text-base font-bold ${qty <= 0 ? 'text-red-400' : 'text-slate-100'}">${qty}</td>
-                <td>${status}</td>
-            </tr>`;
+            const itemId = item.item_id || item.id || '';
+            const shortId = itemId ? itemId.substring(0, 8) : '--------';
+
+            return `<tr class="hover:bg-stone-800/30 transition">
+        <td class="py-2.5 text-left truncate">
+            <div class="font-mono text-stone-300 text-xs">${item.sku}</div>
+            <div class="text-[10px] font-mono text-stone-500 cursor-pointer hover:text-orange-400 transition" 
+                 title="Full Product UUID: ${itemId} (Click to copy)" 
+                 onclick="navigator.clipboard.writeText('${itemId}'); log('Copied Product ID: ${shortId}', true);">
+                #${shortId}
+            </div>
+        </td>
+        <td class="py-2.5 text-left font-medium text-white truncate">${item.item_name}</td>
+        <td class="py-2.5 text-left text-stone-400 truncate">${item.category || '—'}</td>
+        <td class="py-2.5 text-right font-mono text-stone-300">$${Number(item.unit_cost_default || 0).toFixed(2)}</td>
+        <td class="py-2.5 text-right font-mono font-bold ${qtyColor} pr-3">${qty}</td>
+    </tr>`;
         }).join('');
     } catch (e) {
         console.error('Failed to fetch stock snapshot:', e);
     }
 }
-let calculatedStatsCache = [];
 
 function filterProfitabilityTable() {
     const query = (document.getElementById('sku-table-search')?.value || '').toLowerCase();
@@ -683,42 +672,53 @@ function renderProfitabilityRows(statsArray) {
     if (!tbody) return;
 
     if (statsArray.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-500 py-6 font-mono text-xs">No matching SKU data found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-stone-500 py-6 font-mono text-xs">No matching SKU data found.</td></tr>';
         return;
     }
 
     tbody.innerHTML = statsArray.map(item => {
         const margin = item.revenue > 0 ? ((item.profit / item.revenue) * 100).toFixed(1) : '0.0';
 
-        let velocityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-slate-800/80">NORMAL</span>`;
+        let velocityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-stone-400 bg-stone-800">Steady</span>`;
         if (item.soldQty >= 5) {
-            velocityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">FAST</span>`;
+            velocityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Top Seller</span>`;
         } else if (item.soldQty === 0) {
-            velocityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">DEAD</span>`;
+            velocityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-stone-500 bg-stone-800/40">No Sales</span>`;
         }
 
-        return `<tr class="hover:bg-slate-800/30 transition">
-            <td class="py-2.5">
-                <div class="font-medium text-white">${item.name}</div>
-                <div class="text-[10px] font-mono text-slate-400">${item.sku} · Cost: $${item.cost.toFixed(2)}</div>
-            </td>
-            <td class="py-2.5 text-right font-mono text-slate-200">${item.soldQty}</td>
-            <td class="py-2.5 text-right font-mono text-slate-200">$${item.revenue.toFixed(2)}</td>
-            <td class="py-2.5 text-right font-mono font-medium ${item.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                ${item.profit >= 0 ? '+' : ''}$${item.profit.toFixed(2)}
-            </td>
-            <td class="py-2.5 text-right font-mono ${Number(margin) >= 30 ? 'text-emerald-400 font-semibold' : 'text-slate-300'}">
-                ${margin}%
-            </td>
-            <td class="py-2.5 text-center">${velocityBadge}</td>
-        </tr>`;
+        return `<tr class="hover:bg-stone-800/30 transition">
+    <td class="py-2 text-left truncate">
+        <div class="font-medium text-white truncate">${item.name}</div>
+        <div class="flex items-center gap-1.5 mt-0.5 text-[10px] font-mono text-stone-400">
+            <span>${item.sku}</span>
+            <span class="text-stone-600">·</span>
+            <span class="cursor-pointer text-stone-400 hover:text-orange-400 transition" 
+                  title="Product Master UUID: ${item.id} (Click to copy)" 
+                  onclick="navigator.clipboard.writeText('${item.id}'); log('Copied Item ID: ${item.id.substring(0, 8)}', true);">
+                Item #${item.id ? item.id.substring(0, 8) : '--------'}
+            </span>
+            <span class="text-stone-600">·</span>
+            <span>Cost: $${item.cost.toFixed(2)}</span>
+        </div>
+    </td>
+    <td class="py-2 text-right font-mono text-stone-200">${item.soldQty}</td>
+    <td class="py-2 text-right font-mono text-stone-200">$${item.revenue.toFixed(2)}</td>
+    <td class="py-2 text-right font-mono font-medium ${item.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+        ${item.profit >= 0 ? '+' : ''}$${item.profit.toFixed(2)}
+    </td>
+    <td class="py-2 text-right font-mono ${Number(margin) >= 30 ? 'text-emerald-400 font-semibold' : 'text-stone-300'}">
+        ${margin}%
+    </td>
+    <td class="py-2 text-center">${velocityBadge}</td>
+</tr>`;
     }).join('');
 }
+
 function calculateProductInsights(salesActivity, stockData, itemsList) {
     let totalGrossProfit = 0;
     let totalInventoryValuation = 0;
+    let totalUnitsOnShelf = 0;
 
-    // 1. ตั้งต้นข้อมูลสินค้าจาก catalog
     const itemStats = {};
     itemsList.forEach(i => {
         itemStats[i.id] = {
@@ -732,15 +732,14 @@ function calculateProductInsights(salesActivity, stockData, itemsList) {
         };
     });
 
-    // 2. คำนวณมูลค่าสต็อกคงคลังรวม (ดึง cost จาก catalog เพื่อความถูกต้อง)
+    // รวมมูลค่าสต็อกและจำนวนชิ้นสินค้าคงคลังทั้งหมดบนเชลฟ์
     stockData.forEach(item => {
         const qty = Math.max(0, item.quantity || 0);
-        // ดึง cost จาก itemStats หรือ fallback ไปที่ item.unit_cost_default
         const cost = itemStats[item.item_id]?.cost ?? Number(item.unit_cost_default || 0);
         totalInventoryValuation += qty * cost;
+        totalUnitsOnShelf += qty;
     });
 
-    // 3. รวบรวมยอดขายและกำไรจากประวัติยอดขายจริง
     salesActivity.forEach(sale => {
         const found = itemsList.find(i => i.name === sale.item_name || i.id === sale.item_id);
         const itemId = found ? found.id : sale.item_id;
@@ -759,9 +758,9 @@ function calculateProductInsights(salesActivity, stockData, itemsList) {
         }
     });
 
-    // 4. อัปเดต Metric Cards
     const elProfit = document.getElementById('dash-profit');
     const elValuation = document.getElementById('dash-valuation');
+    const elUnits = document.getElementById('dash-total-units');
 
     if (elProfit) {
         elProfit.innerText = '$' + totalGrossProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -769,14 +768,16 @@ function calculateProductInsights(salesActivity, stockData, itemsList) {
     if (elValuation) {
         elValuation.innerText = '$' + totalInventoryValuation.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
+    if (elUnits) {
+        elUnits.innerText = totalUnitsOnShelf.toLocaleString('en-US');
+    }
 
-    // 5. จัดเรียงและส่งให้ renderProfitabilityRows จัดการแสดงผลจุดเดียว
     const statsArray = Object.values(itemStats);
     statsArray.sort((a, b) => b.profit - a.profit);
-
     calculatedStatsCache = statsArray;
     renderProfitabilityRows(statsArray);
 }
+
 (async function init() {
     initApp();
     await fetchItems();

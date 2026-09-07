@@ -17,8 +17,17 @@ body {
     z-index: 0;
 }
 
-.glow-1 { top: -100px; left: -100px; background: #3b82f6; }
-.glow-2 { bottom: -100px; right: -100px; background: #8b5cf6; }
+.glow-1 {
+    top: -100px;
+    left: -100px;
+    background: #3b82f6;
+}
+
+.glow-2 {
+    bottom: -100px;
+    right: -100px;
+    background: #8b5cf6;
+}
 
 .login-card {
     background: rgba(30, 41, 59, 0.8);

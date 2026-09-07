@@ -1,504 +1,816 @@
 <!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NexTrack — Commercial Inventory Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
-        rel="stylesheet" />
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/common.css" />
     <link rel="stylesheet" href="css/dashboard.css" />
-</head>
+  </head>
 
-<body class="flex flex-col md:flex-row h-screen overflow-hidden">
+  <body class="flex flex-col md:flex-row h-screen overflow-hidden">
     <!-- Mobile Backdrop -->
-    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+    <div
+      id="sidebar-backdrop"
+      class="sidebar-backdrop"
+      onclick="toggleSidebar()"
+    ></div>
 
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar py-6 flex-shrink-0">
-        <div class="flex items-center justify-between px-6 mb-8">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-xl shadow-[0_0_15px_rgba(59,130,246,0.5)] brand-font">
-                    N
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-wide">NexTrack</h1>
-                    <span class="text-[10px] text-blue-400 font-semibold tracking-wider uppercase">Enterprise</span>
-                </div>
+    <!-- SIDEBAR: Commercial Utility Sidebar -->
+    <aside
+      id="sidebar"
+      class="sidebar flex-shrink-0 flex flex-col justify-between h-screen border-r border-slate-800 bg-[#0c121e]"
+    >
+      <div>
+        <!-- Brand / Store Header -->
+        <div
+          class="px-5 py-4 border-b border-slate-800 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-mono font-bold text-base text-white"
+            >
+              N
             </div>
-            <button class="md:hidden text-slate-400 hover:text-white" onclick="toggleSidebar()">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
+            <div class="leading-tight">
+              <div class="text-sm font-semibold text-white tracking-tight">
+                NexTrack
+              </div>
+              <div
+                id="user-business-name"
+                class="text-[11px] text-slate-400 font-mono truncate max-w-[140px]"
+              >
+                HQ Convenience
+              </div>
+            </div>
+          </div>
+          <button
+            class="md:hidden text-slate-400 hover:text-white"
+            onclick="toggleSidebar()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
         </div>
 
-        <!-- Navigation Menu -->
-        <nav class="flex-1 flex flex-col gap-1">
-            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-6 mb-2 mt-2">
-                Navigation
-            </div>
+        <!-- Navigation Links -->
+        <nav class="p-3 space-y-1">
+          <a
+            id="nav-dashboard"
+            class="nav-link active"
+            onclick="switchTab('dashboard')"
+          >
+            <svg
+              class="w-4 h-4 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span>Register Overview</span>
+          </a>
 
-            <a id="nav-dashboard" class="nav-link active brand-font" onclick="switchTab('dashboard')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
-                    </path>
-                </svg>
-                Dashboard
-            </a>
-
-            <a id="nav-management" class="nav-link brand-font" onclick="switchTab('management')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
-                Stock Management
-            </a>
+          <a
+            id="nav-management"
+            class="nav-link"
+            onclick="switchTab('management')"
+          >
+            <svg
+              class="w-4 h-4 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              ></path>
+            </svg>
+            <span>Stock Ledger</span>
+          </a>
         </nav>
+      </div>
 
-        <!-- User Profile & Store Info Card -->
-        <div class="p-4 mx-3 mt-auto bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-                <div>
-                    <div id="user-display-name" class="font-semibold text-sm text-white">
-                        Loading...
-                    </div>
-                    <div id="user-role-badge" class="mt-1 inline-block role-badge role-cashier">
-                        CASHIER
-                    </div>
-                </div>
+      <!-- Docked Operator Footer (เรียบง่าย ยึดติดระนาบล่างสุด) -->
+      <div class="p-3 border-t border-slate-800 bg-[#090e17]">
+        <div
+          class="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-slate-800/40 transition"
+        >
+          <div class="min-w-0">
+            <div
+              id="user-display-name"
+              class="text-xs font-medium text-white truncate"
+            >
+              Staff Operator
             </div>
-
-            <div class="pt-2 border-t border-slate-800 text-xs">
-                <div class="text-slate-400">Business Unit:</div>
-                <div id="user-business-name" class="font-medium text-blue-300 truncate">
-                    HQ Convenience Store
-                </div>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span id="user-role-badge" class="role-badge role-owner"
+                >OWNER</span
+              >
+              <span class="text-[10px] text-slate-500 font-mono">Shift #1</span>
             </div>
-
-            <button onclick="logout()"
-                class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 mt-1 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
-                    </path>
-                </svg>
-                Sign Out
-            </button>
+          </div>
+          <button
+            onclick="logout()"
+            title="Sign Out"
+            class="p-1.5 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              ></path>
+            </svg>
+          </button>
         </div>
+      </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content flex flex-col flex-1 h-screen overflow-y-auto lg:overflow-hidden p-3 lg:p-4">
-        <!-- Top App Bar -->
-        <header
-            class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-3 pb-2 border-b border-slate-800">
-            <div class="flex items-center gap-3">
+    <main
+      class="main-content flex flex-col flex-1 h-screen overflow-hidden p-3 lg:p-4 box-border"
+    >
+      <!-- Top App Bar -->
+      <header
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-3 pb-3 border-b border-slate-800"
+      >
+        <div class="flex items-center gap-3">
+          <button
+            class="md:hidden p-2 rounded bg-slate-800 text-slate-300 hover:text-white"
+            onclick="toggleSidebar()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
+            </svg>
+          </button>
+          <div>
+            <div class="flex items-center gap-2.5">
+              <h2
+                id="page-title"
+                class="text-xl font-bold text-white tracking-tight"
+              >
+                Daily Register & Sales
+              </h2>
+              <span
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Connected
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Real-time point of sale data and shelf inventory
+            </p>
+          </div>
+        </div>
+
+        <!-- Period Selector -->
+        <div class="flex items-center gap-2">
+          <div
+            class="inline-flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs"
+          >
+            <button
+              type="button"
+              id="global-filter-day"
+              onclick="setGlobalPeriod('day')"
+              class="px-3 py-1 rounded text-slate-400 hover:text-white transition"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              id="global-filter-month"
+              onclick="setGlobalPeriod('month')"
+              class="px-3 py-1 rounded text-slate-400 hover:text-white transition"
+            >
+              This Month
+            </button>
+            <button
+              type="button"
+              id="global-filter-year"
+              onclick="setGlobalPeriod('year')"
+              class="px-3 py-1 rounded text-slate-400 hover:text-white transition"
+            >
+              This Year
+            </button>
+            <button
+              type="button"
+              id="global-filter-all"
+              onclick="setGlobalPeriod('all')"
+              class="px-3 py-1 rounded text-white bg-blue-600 font-medium transition"
+            >
+              All Time
+            </button>
+          </div>
+
+          <button
+            onclick="fetchDashboard()"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition"
+          >
+            <svg
+              class="w-3.5 h-3.5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              ></path>
+            </svg>
+            Sync Now
+          </button>
+        </div>
+      </header>
+
+      <!-- DASHBOARD VIEW -->
+      <div
+        id="view-dashboard"
+        class="flex flex-col h-full gap-3 w-full max-w-[1650px] mx-auto min-h-0 overflow-hidden"
+      >
+        <!-- 1. KPI GRID -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="metric-card p-3.5">
+            <div class="text-[11px] font-medium text-slate-400">
+              Total Sales
+            </div>
+            <div
+              class="text-2xl font-bold font-mono text-white mt-1"
+              id="dash-revenue"
+            >
+              $0.00
+            </div>
+            <div class="text-[11px] text-slate-500 mt-0.5">
+              Register revenue
+            </div>
+          </div>
+
+          <div class="metric-card p-3.5">
+            <div class="text-[11px] font-medium text-emerald-400">
+              Gross Profit
+            </div>
+            <div
+              class="text-2xl font-bold font-mono text-emerald-400 mt-1"
+              id="dash-profit"
+            >
+              $0.00
+            </div>
+            <div class="text-[11px] text-slate-500 mt-0.5">After item cost</div>
+          </div>
+
+          <div class="metric-card p-3.5">
+            <div class="text-[11px] font-medium text-slate-400">Items Sold</div>
+            <div
+              class="text-2xl font-bold font-mono text-slate-100 mt-1"
+              id="dash-sold"
+            >
+              0
+            </div>
+            <div class="text-[11px] text-slate-500 mt-0.5">
+              Units checked out
+            </div>
+          </div>
+
+          <div class="metric-card p-3.5">
+            <div class="text-[11px] font-medium text-slate-400">
+              Inventory Value
+            </div>
+            <div
+              class="text-2xl font-bold font-mono text-amber-300 mt-1"
+              id="dash-valuation"
+            >
+              $0.00
+            </div>
+            <div class="text-[11px] text-slate-500 mt-0.5">
+              <span id="dash-skus" class="text-slate-300">0</span> SKUs ·
+              <span id="dash-total-units" class="text-slate-300">0</span> on
+              shelf
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. CHARTS SECTION -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+          <div class="glass-card p-4">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-sm font-semibold brand-font text-blue-100">
+                Sales Analytics
+              </h3>
+              <div class="flex items-center gap-2">
+                <select
+                  id="chart-type-selector"
+                  onchange="changeChartType(this.value)"
+                  class="text-[11px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-2 py-0.5 outline-none"
+                >
+                  <option value="doughnut">Share (Doughnut)</option>
+                  <option value="bar">Volume (Bar)</option>
+                  <option value="line">Trend (Line)</option>
+                </select>
                 <button
-                    class="md:hidden p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white"
-                    onclick="toggleSidebar()">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
+                  onclick="fetchDashboard()"
+                  class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 transition"
+                >
+                  ↻ Refresh
                 </button>
+              </div>
+            </div>
+            <div class="h-36 relative w-full">
+              <canvas id="salesChart"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-card p-4">
+            <div
+              class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2"
+            >
+              <div>
+                <h3 class="text-sm font-semibold brand-font text-blue-100">
+                  Revenue Trends
+                </h3>
+                <p class="text-[10px] text-slate-400">
+                  Periodic revenue distribution
+                </p>
+              </div>
+            </div>
+            <div class="h-36 relative w-full">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. TRANSACTION & SHIFT STATUS -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
+          <div
+            class="glass-card p-4 lg:col-span-8 flex flex-col justify-between h-[230px]"
+          >
+            <div>
+              <div class="flex justify-between items-center mb-2">
                 <div>
-                    <div class="flex items-center gap-2.5">
-                        <h2 id="page-title" class="text-2xl font-bold brand-font text-white">Dashboard Overview</h2>
-                        <span
-                            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live Sync
-                        </span>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-0.5">Enterprise SKU inventory telemetry & commercial analytics
-                    </p>
+                  <h3 class="text-sm font-semibold brand-font text-blue-100">
+                    Live Transaction Stream
+                  </h3>
+                  <p class="text-[10px] text-slate-400">
+                    Audited transaction ledger records
+                  </p>
                 </div>
+                <span
+                  class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800"
+                  >Limit: 20</span
+                >
+              </div>
+
+              <div class="h-[160px] overflow-y-auto">
+                <table class="w-full table-fixed border-collapse">
+                  <thead
+                    class="sticky top-0 bg-slate-900/95 backdrop-blur text-[11px] border-b border-slate-800 z-10"
+                  >
+                    <tr>
+                      <th
+                        class="py-1 text-left w-[42%] text-slate-400 font-semibold uppercase tracking-wider"
+                      >
+                        Item Description
+                      </th>
+                      <th
+                        class="py-1 text-right w-[15%] text-slate-400 font-semibold uppercase tracking-wider"
+                      >
+                        Qty
+                      </th>
+                      <th
+                        class="py-1 text-right w-[20%] text-slate-400 font-semibold uppercase tracking-wider"
+                      >
+                        Net Revenue
+                      </th>
+                      <th
+                        class="py-1 text-right w-[23%] text-slate-400 font-semibold uppercase tracking-wider pr-2"
+                      >
+                        Timestamp
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="recent-sales-table"
+                    class="text-xs divide-y divide-slate-800/40"
+                  ></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="glass-card p-4 lg:col-span-4 flex flex-col justify-between h-[230px]"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold text-slate-200">
+                  Shift Operations
+                </h3>
+                <span
+                  class="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800"
+                  >Branch HQ</span
+                >
+              </div>
+
+              <div class="divide-y divide-slate-800/60 text-xs mt-3">
+                <div class="flex justify-between py-2">
+                  <span class="text-slate-400">Inventory Status</span>
+                  <span class="text-emerald-400 font-medium"
+                    >All counts valid</span
+                  >
+                </div>
+                <div class="flex justify-between py-2">
+                  <span class="text-slate-400">Data Source</span>
+                  <span class="text-slate-300 font-mono text-[11px]"
+                    >Direct Event Ledger</span
+                  >
+                </div>
+                <div class="flex justify-between py-2">
+                  <span class="text-slate-400">Shift Active</span>
+                  <span class="text-slate-300">Morning / Day</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Quick Action / Global Time Period Selector -->
-            <div class="flex items-center gap-2.5 w-full lg:w-auto justify-between lg:justify-end">
-                <div class="flex items-center bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs">
-                    <button type="button" id="global-filter-day" onclick="setGlobalPeriod('day')"
-                        class="px-3 py-1 rounded font-medium text-slate-400 hover:text-white transition">Day</button>
-                    <button type="button" id="global-filter-month" onclick="setGlobalPeriod('month')"
-                        class="px-3 py-1 rounded font-medium text-slate-400 hover:text-white transition">Month</button>
-                    <button type="button" id="global-filter-year" onclick="setGlobalPeriod('year')"
-                        class="px-3 py-1 rounded font-medium text-slate-400 hover:text-white transition">Year</button>
-                    <button type="button" id="global-filter-all" onclick="setGlobalPeriod('all')"
-                        class="px-3 py-1 rounded font-medium text-white bg-blue-600 transition">All Time</button>
-                </div>
+            <button
+              onclick="switchTab('management')"
+              class="btn-primary w-full py-2 text-xs font-semibold"
+            >
+              <span>Open Stock Ledger & Adjustments</span>
+              <svg
+                class="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
 
-                <button onclick="fetchDashboard()"
-                    class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 shadow-sm transition">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                        </path>
-                    </svg>
-                    Sync Ledger
+        <!-- 4. SKU PERFORMANCE TABLE -->
+        <div
+          class="glass-card p-3 flex-1 min-h-0 flex flex-col justify-between overflow-hidden"
+        >
+          <div class="flex flex-col h-full min-h-0">
+            <div
+              class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 flex-shrink-0"
+            >
+              <div>
+                <h3 class="text-sm font-semibold brand-font text-white">
+                  SKU Performance & Margin Yield
+                </h3>
+                <p class="text-[10px] text-slate-400">
+                  Unit-level contribution margin and velocity classification
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  id="sku-table-search"
+                  oninput="filterProfitabilityTable()"
+                  type="text"
+                  placeholder="Filter SKU or name..."
+                  class="text-xs bg-slate-900/80 border border-slate-700/80 rounded-lg px-2.5 py-1 text-white outline-none w-44 focus:border-blue-500 transition"
+                />
+              </div>
+            </div>
+
+            <!-- ให้ container ตารางยืดเต็มพื้นที่ที่เหลือและ scroll ในตัวเอง ไม่ดันหลุดจอ -->
+            <div class="flex-1 min-h-0 overflow-y-auto">
+              <table class="w-full text-left border-collapse table-fixed">
+                <thead
+                  class="sticky top-0 bg-slate-900 text-[10px] uppercase tracking-wider text-slate-400 font-semibold border-b border-slate-700/50 z-10"
+                >
+                  <tr>
+                    <th class="py-1.5 w-[34%]">SKU & Item Name</th>
+                    <th class="py-1.5 text-right w-[12%]">Units Sold</th>
+                    <th class="py-1.5 text-right w-[14%]">Gross Rev</th>
+                    <th class="py-1.5 text-right w-[14%]">Est. Profit</th>
+                    <th class="py-1.5 text-right w-[12%]">Margin %</th>
+                    <th class="py-1.5 text-center w-[14%]">Velocity</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="profitability-table"
+                  class="divide-y divide-slate-800/50 text-xs"
+                ></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STOCK MANAGEMENT VIEW -->
+      <div
+        id="view-management"
+        class="hidden h-full flex flex-col gap-3 w-full max-w-[1650px] mx-auto pb-2"
+      >
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 flex-1 min-h-0">
+          <!-- ฝั่งซ้าย: ตาราง Live Inventory -->
+          <div
+            class="glass-card p-4 lg:col-span-8 flex flex-col h-full min-h-0"
+          >
+            <div
+              class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3 pb-3 border-b border-slate-800"
+            >
+              <div>
+                <h3 class="text-base font-semibold text-white">
+                  Inventory Stock Status
+                </h3>
+                <p class="text-xs text-slate-400">
+                  Current shelf balance and stock level indicators
+                </p>
+              </div>
+              <div class="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  id="stock-search"
+                  oninput="filterStockTable()"
+                  type="text"
+                  placeholder="Search SKU or name..."
+                  class="text-xs bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1.5 text-white outline-none w-48 focus:border-blue-500 transition"
+                />
+                <button
+                  onclick="fetchStock()"
+                  class="btn-primary text-xs !py-1.5 !px-3 !bg-slate-800 hover:!bg-slate-700 text-slate-200 border border-slate-700"
+                >
+                  <span>↻ Refresh</span>
                 </button>
-            </div>
-        </header>
-
-        <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="space-y-3.5 w-full max-w-[1650px] mx-auto">
-            <!-- 1. COMPACT COMMERCIAL KPI GRID -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                <div class="metric-card p-3">
-                    <div
-                        class="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                        <span>Gross Revenue</span>
-                        <span class="text-emerald-400 font-mono text-[10px]">▲ 8.2%</span>
-                    </div>
-                    <div class="text-xl font-bold text-white brand-font mt-0.5" id="dash-revenue">$0.00</div>
-                    <div class="text-[9px] text-slate-500">Invoiced sales</div>
-                </div>
-
-                <div class="metric-card p-3 border-emerald-500/25">
-                    <div
-                        class="flex items-center justify-between text-[10px] text-emerald-300 uppercase tracking-wider font-semibold">
-                        <span>Net Profit</span>
-                        <span class="text-emerald-400 font-mono text-[10px]">▲ 14.1%</span>
-                    </div>
-                    <div class="text-xl font-bold text-emerald-400 brand-font mt-0.5" id="dash-profit">$0.00</div>
-                    <div class="text-[9px] text-slate-500">Realized margin</div>
-                </div>
-
-                <div class="metric-card p-3">
-                    <div
-                        class="flex items-center justify-between text-[10px] text-blue-300 uppercase tracking-wider font-semibold">
-                        <span>Volume Shipped</span>
-                        <span class="text-slate-400 font-mono text-[10px]">Units</span>
-                    </div>
-                    <div class="text-xl font-bold text-white brand-font mt-0.5" id="dash-sold">0</div>
-                    <div class="text-[9px] text-slate-500">Outbound movement</div>
-                </div>
-
-                <div class="metric-card p-3 border-amber-500/25">
-                    <div
-                        class="flex items-center justify-between text-[10px] text-amber-300 uppercase tracking-wider font-semibold">
-                        <span>Asset Valuation</span>
-                        <span class="text-amber-400 font-mono text-[10px]">Cost Basis</span>
-                    </div>
-                    <div class="text-xl font-bold text-amber-300 brand-font mt-0.5" id="dash-valuation">$0.00</div>
-                    <div class="text-[9px] text-slate-500">Current inventory</div>
-                </div>
-
-                <div class="metric-card p-3 border-purple-500/25 col-span-2 sm:col-span-1">
-                    <div
-                        class="flex items-center justify-between text-[10px] text-purple-300 uppercase tracking-wider font-semibold">
-                        <span>Active SKUs</span>
-                        <span class="text-purple-400 font-mono text-[10px]">Catalog</span>
-                    </div>
-                    <div class="text-xl font-bold text-white brand-font mt-0.5" id="dash-skus">0</div>
-                    <div class="text-[9px] text-slate-500">Active lines</div>
-                </div>
+              </div>
             </div>
 
-            <!-- 2. CHARTS SECTION (ความสูงลดลงเหลือ h-44 เพื่อประหยัดพื้นที่) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-                <!-- Sales Analytics -->
-                <div class="glass-card p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-sm font-semibold brand-font text-blue-100">Sales Analytics</h3>
-                        <div class="flex items-center gap-2">
-                            <select id="chart-type-selector" onchange="changeChartType(this.value)"
-                                class="text-[11px] bg-slate-800 text-slate-300 border border-slate-700 rounded px-2 py-0.5 outline-none">
-                                <option value="doughnut">Share (Doughnut)</option>
-                                <option value="bar">Volume (Bar)</option>
-                                <option value="line">Trend (Line)</option>
-                            </select>
-                            <button onclick="fetchDashboard()"
-                                class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 transition">
-                                ↻ Refresh
-                            </button>
-                        </div>
-                    </div>
-                    <div class="h-36 relative w-full">
-                        <canvas id="salesChart"></canvas>
-                    </div>
+            <div class="flex-1 overflow-y-auto min-h-0">
+              <table class="w-full table-fixed border-collapse">
+                <thead
+                  class="sticky top-0 bg-slate-900 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800 z-10"
+                >
+                  <tr>
+                    <th class="py-2 text-left w-[20%]">SKU</th>
+                    <th class="py-2 text-left w-[30%]">Product Name</th>
+                    <th class="py-2 text-left w-[20%]">Category</th>
+                    <th class="py-2 text-right w-[15%]">Unit Cost</th>
+                    <th class="py-2 text-right w-[15%] pr-3">On Hand</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="stock-table"
+                  class="text-xs divide-y divide-slate-800/40 font-mono"
+                ></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ฝั่งขวา: เครื่องมือจัดการ -->
+          <div
+            class="glass-card p-4 lg:col-span-4 flex flex-col h-full min-h-0 justify-between"
+          >
+            <div class="overflow-y-auto pr-1">
+              <div
+                class="flex bg-slate-900 p-1 rounded-lg border border-slate-800 mb-3 text-xs"
+              >
+                <button
+                  type="button"
+                  id="tab-log-btn"
+                  onclick="toggleStockSubTab('log')"
+                  class="flex-1 py-1 rounded bg-slate-800 text-white font-medium"
+                >
+                  Record Movement
+                </button>
+                <button
+                  type="button"
+                  id="tab-reg-btn"
+                  onclick="toggleStockSubTab('register')"
+                  class="flex-1 py-1 rounded text-slate-400 hover:text-white"
+                >
+                  Register Item
+                </button>
+              </div>
+
+              <!-- 1. Form: Log Movement -->
+              <div id="subview-log-movement" class="space-y-3">
+                <div>
+                  <label
+                    class="block text-[11px] font-medium text-slate-400 mb-1"
+                    >Select Item</label
+                  >
+                  <select
+                    id="evt-item"
+                    class="input-field text-xs py-1.5"
+                    onchange="onItemSelectChange()"
+                  ></select>
                 </div>
 
-                <!-- Revenue Trends -->
-                <div class="glass-card p-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-                        <div>
-                            <h3 class="text-sm font-semibold brand-font text-blue-100">Revenue Trends</h3>
-                            <p class="text-[10px] text-slate-400">Periodic revenue distribution</p>
-                        </div>
-                    </div>
-                    <div class="h-36 relative w-full">
-                        <canvas id="trendChart"></canvas>
-                    </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label
+                      class="block text-[11px] font-medium text-slate-400 mb-1"
+                      >Action</label
+                    >
+                    <select
+                      id="evt-type"
+                      class="input-field text-xs py-1.5"
+                      onchange="updateQtyLabel()"
+                    >
+                      <option value="SALE">Sale (Deduct)</option>
+                      <option value="RESTOCK">Restock (Add)</option>
+                      <option value="ADJUSTMENT">Audit (Set Total)</option>
+                      <option value="WASTE">Damaged / Waste</option>
+                      <option value="RETURN">Customer Return</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      id="lbl-qty"
+                      class="block text-[11px] font-medium text-slate-400 mb-1"
+                      >Quantity</label
+                    >
+                    <input
+                      id="evt-qty"
+                      type="number"
+                      min="1"
+                      value="1"
+                      class="input-field text-xs py-1.5 font-mono"
+                    />
+                  </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label
+                      class="block text-[11px] font-medium text-slate-400 mb-1"
+                      >Unit Price ($)</label
+                    >
+                    <input
+                      id="evt-price"
+                      type="number"
+                      step="0.01"
+                      class="input-field text-xs py-1.5 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      class="block text-[11px] font-medium text-slate-400 mb-1"
+                      >Note (Optional)</label
+                    >
+                    <input
+                      id="evt-note"
+                      placeholder="E.g. Batch #204"
+                      class="input-field text-xs py-1.5"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onclick="logEvent()"
+                  class="btn-primary w-full py-2 text-xs font-semibold mt-1"
+                >
+                  Apply Movement
+                </button>
+              </div>
+
+              <!-- 2. Form: Register Product (subview-register-product) -->
+              <div id="subview-register-product" class="hidden space-y-3">
+                <div>
+                  <label
+                    class="block text-[11px] font-medium text-slate-400 mb-1"
+                    >Product ID</label
+                  >
+                  <input
+                    id="item-id"
+                    placeholder="Scan or enter ID"
+                    class="input-field text-xs py-1.5 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    class="block text-[11px] font-medium text-slate-400 mb-1"
+                    >SKU Code</label
+                  >
+                  <input
+                    id="item-sku"
+                    placeholder="E.g. BEV-COF-01"
+                    class="input-field text-xs py-1.5 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    class="block text-[11px] font-medium text-slate-400 mb-1"
+                    >Item Description</label
+                  >
+                  <input
+                    id="item-name"
+                    placeholder="E.g. Cold Brew 250ml"
+                    class="input-field text-xs py-1.5"
+                  />
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label
+                      class="block text-[11px] font-medium text-slate-400 mb-1"
+                      >Category</label
+                    >
+                    <input
+                      id="item-cat"
+                      placeholder="E.g. Drinks"
+                      class="input-field text-xs py-1.5"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      class="block text-[11px] font-medium text-slate-400 mb-1"
+                      >Base Cost ($)</label
+                    >
+                    <input
+                      id="item-cost"
+                      type="number"
+                      step="0.01"
+                      value="1.00"
+                      class="input-field text-xs py-1.5 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onclick="createItem()"
+                  class="btn-primary w-full py-2 text-xs font-semibold mt-1"
+                >
+                  Save to Catalog
+                </button>
+              </div>
             </div>
 
-            <!-- 3. TRANSACTION & STATUS SECTION -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
-                <!-- Live Transaction Stream (ลด max-height เหลือ 170px) -->
-                <div class="glass-card p-4 lg:col-span-8">
-                    <div class="flex justify-between items-center mb-2">
-                        <div>
-                            <h3 class="text-sm font-semibold brand-font text-blue-100">Live Transaction Stream</h3>
-                            <p class="text-[10px] text-slate-400">Audited transaction ledger records</p>
-                        </div>
-                        <span
-                            class="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
-                            Limit: 20
-                        </span>
-                    </div>
-                    <div class="overflow-y-auto" style="max-height: 170px;">
-                        <table class="w-full">
-                            <thead class="sticky top-0 bg-slate-900/95 backdrop-blur text-[11px]">
-                                <tr>
-                                    <th class="py-1">Item Description</th>
-                                    <th class="py-1">Qty</th>
-                                    <th class="py-1">Net Revenue</th>
-                                    <th class="py-1">Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-sales-table" class="text-xs divide-y divide-slate-800/40"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Inventory Status -->
-                <div class="glass-card p-4 lg:col-span-4 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-sm font-semibold brand-font text-slate-100">Inventory Status</h3>
-                            <span
-                                class="text-[9px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Operational</span>
-                        </div>
-                        <div class="space-y-2 mt-2">
-                            <div class="p-2 rounded-lg bg-slate-900/70 border border-slate-800">
-                                <div class="flex justify-between text-[11px] mb-1">
-                                    <span class="text-slate-400">Stock Turnover Health</span>
-                                    <span class="text-emerald-400 font-mono font-medium">94%</span>
-                                </div>
-                                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 94%"></div>
-                                </div>
-                            </div>
-
-                            <div class="p-2 rounded-lg bg-slate-900/70 border border-slate-800">
-                                <div class="flex justify-between text-[11px] mb-1">
-                                    <span class="text-slate-400">Catalog Storage Capacity</span>
-                                    <span class="text-blue-400 font-mono font-medium">68%</span>
-                                </div>
-                                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                    <div class="bg-blue-500 h-full rounded-full" style="width: 68%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="switchTab('management')"
-                        class="w-full mt-2 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center justify-center gap-1.5">
-                        <span>Open Movement Ledger</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
-                            </path>
-                        </svg>
-                    </button>
-                </div>
+            <!-- Activity Log -->
+            <div class="mt-3 pt-2 border-t border-slate-800">
+              <div
+                class="flex justify-between items-center mb-1 text-[11px] text-slate-400"
+              >
+                <span>Recent Activity</span>
+                <button onclick="clearLogs()" class="hover:text-slate-200">
+                  Clear
+                </button>
+              </div>
+              <div
+                id="log"
+                class="max-h-[85px] overflow-y-auto font-mono text-[10px]"
+              ></div>
             </div>
-
-            <!-- 4. SKU PERFORMANCE TABLE (ลด padding แถวตารางให้อ่านง่ายแต่กระชับ) -->
-            <div class="glass-card p-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-                    <div>
-                        <h3 class="text-sm font-semibold brand-font text-white">SKU Performance & Margin Yield</h3>
-                        <p class="text-[10px] text-slate-400">Unit-level contribution margin and velocity classification
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input id="sku-table-search" oninput="filterProfitabilityTable()" type="text"
-                            placeholder="Filter SKU or name..."
-                            class="text-xs bg-slate-900/80 border border-slate-700/80 rounded-lg px-2.5 py-1 text-white outline-none w-44 focus:border-blue-500 transition" />
-                    </div>
-                </div>
-                <div class="overflow-x-auto" style="max-height: 180px;">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
-                            <tr
-                                class="border-b border-slate-700/50 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                                <th class="py-1.5">SKU & Item Name</th>
-                                <th class="py-1.5 text-right">Units Sold</th>
-                                <th class="py-1.5 text-right">Gross Rev</th>
-                                <th class="py-1.5 text-right">Est. Profit</th>
-                                <th class="py-1.5 text-right">Margin %</th>
-                                <th class="py-1.5 text-center">Velocity</th>
-                            </tr>
-                        </thead>
-                        <tbody id="profitability-table" class="divide-y divide-slate-800/50 text-xs"></tbody>
-                    </table>
-                </div>
-            </div>
+          </div>
         </div>
-
-        <!-- STOCK MANAGEMENT VIEW -->
-        <div id="view-management" class="hidden space-y-6 w-full max-w-[1600px] mx-auto">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Log Movement Form -->
-                <div class="glass-card p-6" id="movement-card" style="grid-column: span 2">
-                    <h3 class="text-xl font-semibold mb-6 brand-font text-blue-100">
-                        Log Inventory Movement
-                    </h3>
-
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="md:col-span-2">
-                                <label
-                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Product</label>
-                                <select id="evt-item" class="input-field" onchange="onItemSelectChange()"></select>
-                            </div>
-
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Action
-                                    Type</label>
-                                <select id="evt-type" class="input-field" onchange="updateQtyLabel()">
-                                    <option value="SALE">💸 Sale (Deduct)</option>
-                                    <option value="RESTOCK">📦 Restock (Add)</option>
-                                    <option value="ADJUSTMENT">
-                                        ⚖️ Adjustment (Set Actual)
-                                    </option>
-                                    <option value="WASTE">🗑️ Waste (Deduct)</option>
-                                    <option value="RETURN">↩️ Return (Add)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label id="lbl-qty"
-                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Quantity</label>
-                                <input id="evt-qty" type="number" min="1" value="1" class="input-field" />
-                            </div>
-
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Unit
-                                    Price ($)</label>
-                                <input id="evt-price" type="number" step="0.01" class="input-field" />
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Note
-                                    (Optional)</label>
-                                <input id="evt-note" placeholder="E.g. Daily shift audit" class="input-field" />
-                            </div>
-                        </div>
-                        <button onclick="logEvent()" class="btn-primary w-full mt-2">
-                            <span>Execute Movement</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="mt-6 border-t border-slate-700/60 pt-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                                Activity Log
-                            </h4>
-                            <button onclick="clearLogs()" class="text-xs text-slate-500 hover:text-slate-300">
-                                Clear
-                            </button>
-                        </div>
-                        <div id="log"></div>
-                    </div>
-                </div>
-
-                <!-- Register Product Form (Owner & Manager Only) -->
-                <div id="card-register-product" class="glass-card p-6 border border-purple-500/20">
-                    <div class="flex items-center gap-2 mb-6">
-                        <div
-                            class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-300">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold brand-font text-purple-200">
-                            Register Product
-                        </h3>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label
-                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">SKU
-                                Code</label>
-                            <input id="item-sku" placeholder="E.g. SNK-001" class="input-field" />
-                        </div>
-                        <div>
-                            <label
-                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Product
-                                Name</label>
-                            <input id="item-name" placeholder="E.g. Green Tea 500ml" class="input-field" />
-                        </div>
-                        <div>
-                            <label
-                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Category</label>
-                            <input id="item-cat" placeholder="E.g. Beverages" class="input-field" />
-                        </div>
-                        <div>
-                            <label
-                                class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Default
-                                Cost ($)</label>
-                            <input id="item-cost" type="number" step="0.01" value="1.50" class="input-field" />
-                        </div>
-                        <button onclick="createItem()"
-                            class="btn-primary w-full !bg-purple-600 hover:!bg-purple-500 mt-2">
-                            <span>Add to Catalog</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Live Inventory Snapshot Table -->
-            <div class="glass-card p-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <h3 class="text-xl font-semibold brand-font text-emerald-100">
-                            Live Inventory Snapshot
-                        </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">
-                            Real-time stock quantities calculated from event ledger
-                        </p>
-                    </div>
-                    <button onclick="fetchStock()"
-                        class="btn-primary text-xs !px-4 !py-2 !bg-slate-700 hover:!bg-slate-600">
-                        <span>↻ Sync Data</span>
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Product Name</th>
-                                <th>Category</th>
-                                <th>Unit Cost</th>
-                                <th>On Hand Qty</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stock-table"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+      </div>
     </main>
 
     <script src="js/app.js"></script>
-</body>
-
+  </body>
 </html>
