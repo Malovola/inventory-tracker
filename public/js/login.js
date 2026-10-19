@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.i18n && typeof window.i18n.createLanguageSelector === 'function') {
+        window.i18n.createLanguageSelector('language-switcher-container');
+    }
+
     const loginForm = document.getElementById('login-form');
     const alertBox = document.getElementById('alert-box');
     const emailInput = document.getElementById('login-email');

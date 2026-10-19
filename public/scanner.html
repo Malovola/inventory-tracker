@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>NexTrack — Mobile Barcode Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/common.css" />
+    <script src="/js/i18n.js?v=2.1"></script>
+    <script src="/js/html5-qrcode.min.js"></script>
+    <style>
+      .scanner-laser {
+        position: absolute;
+        left: 5%;
+        right: 5%;
+        height: 2px;
+        background: #ef4444;
+        box-shadow: 0 0 12px 2px #ef4444;
+        top: 20%;
+        animation: laserScan 2s infinite ease-in-out alternate;
+        pointer-events: none;
+        z-index: 20;
+      }
+      @keyframes laserScan {
+        0% { top: 15%; opacity: 0.8; }
+        50% { opacity: 1; }
+        100% { top: 85%; opacity: 0.8; }
+      }
+      #reader video {
+        object-fit: cover !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+    </style>
+  </head>
+
+  <body class="bg-[#080d16] text-slate-100 min-h-screen flex flex-col font-sans select-none overflow-x-hidden">
+    <!-- Top Mobile App Bar (Optimized, non-wrapping on any mobile screen) -->
+    <header class="h-14 px-3 sm:px-4 bg-[#0d1424] border-b border-slate-800 flex items-center justify-between flex-shrink-0 z-30">
+      <div class="flex items-center gap-2 shrink-0">
+        <a href="/" class="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center shrink-0 transition" title="Back to Dashboard">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+        </a>
+        <div class="flex items-center gap-1.5">
+          <h1 class="text-sm font-bold text-white tracking-tight whitespace-nowrap" data-i18n="scanner_title_short">Scanner</h1>
+          <span id="scanner-live-badge" class="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 shrink-0">LIVE</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Language Switcher Container (Compact 🇺🇸 EN / 🇹🇭 TH) -->
+        <div id="language-switcher-container"></div>
+
+        <button id="btn-torch" onclick="toggleTorch()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-700/60 transition hidden" title="Toggle Flashlight">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+        </button>
+        <button id="btn-switch-cam" onclick="switchCamera()" class="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 transition" title="Switch Camera">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scanner Main Container -->
+    <main class="flex-1 flex flex-col p-3 max-w-lg mx-auto w-full gap-3 overflow-y-auto">
+      
+      <!-- Insecure Context / HTTPS Guidance Card -->
+      <div id="https-alert-card" class="hidden rounded-xl border border-amber-500/40 bg-amber-950/40 p-3.5 text-xs text-amber-200">
+        <div class="flex items-start gap-2.5">
+          <span class="text-lg">🔒</span>
+          <div class="flex-1">
+            <div class="font-bold text-white text-xs" data-i18n="scanner_https_warning">Mobile camera requires HTTPS (Secure Context)</div>
+            <p class="text-[11px] text-amber-300/80 mt-1" data-i18n="scanner_https_hint">
+              Mobile browsers block live camera on plain HTTP. Tap below to switch to the secure HTTPS terminal.
+            </p>
+            <div class="mt-2.5 flex flex-col sm:flex-row gap-2">
+              <a
+                id="btn-switch-to-https"
+                href="#"
+                class="btn-primary !bg-amber-600 hover:!bg-amber-500 text-white font-semibold text-xs py-2 px-3 text-center rounded-lg shadow"
+                data-i18n="scanner_https_btn"
+              >
+                Switch to Secure HTTPS Terminal
+              </a>
+              <button
+                type="button"
+                onclick="triggerPhotoSnap()"
+                class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold"
+                data-i18n="scanner_btn_snap"
+              >
+                📸 Snap Photo Instead
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode & Quantity Control Card -->
+      <div class="glass-card p-3 flex flex-col gap-2.5">
+        <div>
+          <div class="text-[11px] text-slate-400 font-medium mb-1.5" data-i18n="scanner_mode">Scan Mode:</div>
+          <div class="grid grid-cols-3 gap-1.5 w-full bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs text-center font-medium">
+            <button id="mode-restock" onclick="setScanMode('RESTOCK')" class="py-2 px-1 rounded-lg bg-blue-600 text-white font-semibold transition flex items-center justify-center gap-1 shadow-sm whitespace-nowrap" data-i18n="scanner_mode_restock">
+              📥 Restock (+)
+            </button>
+            <button id="mode-sale" onclick="setScanMode('SALE')" class="py-2 px-1 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1 whitespace-nowrap" data-i18n="scanner_mode_sale">
+              📤 Sale (-)
+            </button>
+            <button id="mode-audit" onclick="setScanMode('CHECK')" class="py-2 px-1 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1 whitespace-nowrap" data-i18n="scanner_mode_audit">
+              🔍 Check
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800/60">
+          <span class="text-slate-400 font-medium whitespace-nowrap" data-i18n="scanner_step_qty">Step Qty:</span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="setQuantity(1)" id="qty-1" class="qty-btn px-2.5 py-1 rounded-lg bg-blue-600/30 text-blue-400 border border-blue-500/40 font-mono font-bold text-xs">1</button>
+            <button onclick="setQuantity(5)" id="qty-5" class="qty-btn px-2.5 py-1 rounded-lg bg-slate-900 text-slate-400 border border-slate-800 font-mono text-xs hover:text-white">5</button>
+            <button onclick="setQuantity(10)" id="qty-10" class="qty-btn px-2.5 py-1 rounded-lg bg-slate-900 text-slate-400 border border-slate-800 font-mono text-xs hover:text-white">10</button>
+            <input id="custom-qty" type="number" min="1" value="1" onchange="setCustomQuantity(this.value)" class="w-12 bg-slate-900 border border-slate-800 rounded-lg px-1.5 py-1 text-center text-xs font-mono text-white outline-none" title="Custom quantity" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Camera Viewfinder Window -->
+      <div class="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden border-2 border-slate-700/80 shadow-2xl flex items-center justify-center">
+        <div id="reader" class="w-full h-full"></div>
+        <div class="scanner-laser" id="laser-line"></div>
+
+        <!-- Visual target guide corners -->
+        <div class="absolute inset-4 pointer-events-none border-2 border-dashed border-white/20 rounded-lg flex flex-col justify-between p-2">
+          <div class="flex justify-between">
+            <div class="w-4 h-4 border-t-2 border-l-2 border-blue-500"></div>
+            <div class="w-4 h-4 border-t-2 border-r-2 border-blue-500"></div>
+          </div>
+          <div class="text-center">
+            <span class="bg-black/60 backdrop-blur px-2.5 py-1 rounded text-[11px] font-mono text-slate-300" data-i18n="scanner_subtitle">
+              Point camera at product barcode or QR code
+            </span>
+          </div>
+          <div class="flex justify-between">
+            <div class="w-4 h-4 border-b-2 border-l-2 border-blue-500"></div>
+            <div class="w-4 h-4 border-b-2 border-r-2 border-blue-500"></div>
+          </div>
+        </div>
+
+        <!-- Camera Status Overlay (if stopped or loading) -->
+        <div id="camera-loading" class="absolute inset-0 bg-[#0c121e] flex flex-col items-center justify-center p-4 text-center z-20">
+          <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+          <div class="text-sm font-medium text-white" data-i18n="scanner_camera_starting">Starting Phone Camera...</div>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="scanner_camera_permission">Please allow camera permissions if prompted</p>
+        </div>
+      </div>
+
+      <!-- Quick Fallback: Snap Barcode Photo Input & Button -->
+      <input
+        type="file"
+        id="camera-snap-input"
+        accept="image/*"
+        capture="environment"
+        class="hidden"
+        onchange="handleSnapFile(event)"
+      />
+
+      <button
+        type="button"
+        onclick="triggerPhotoSnap()"
+        class="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer shadow-md"
+      >
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        <span data-i18n="scanner_btn_snap">📸 Snap Photo to Scan</span>
+      </button>
+
+      <!-- Scan Feedback Card -->
+      <div id="feedback-card" class="hidden rounded-xl border p-3.5 transition-all duration-200">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Manual Code Entry (Fallback) -->
+      <div class="glass-card p-3">
+        <form onsubmit="handleManualSubmit(event)" class="flex gap-2">
+          <input
+            id="manual-code"
+            type="text"
+            data-i18n-placeholder="scanner_manual_placeholder"
+            placeholder="Type Barcode or SKU manually..."
+            class="input-field text-xs flex-1 font-mono"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn-primary text-xs px-3.5 py-2" data-i18n="scanner_submit">
+            Submit
+          </button>
+        </form>
+      </div>
+
+      <!-- Recent Scans Feed -->
+      <div class="glass-card p-3 flex-1 flex flex-col min-h-[140px]">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-white" data-i18n="scanner_recent_scans">Recent Scanned Items</span>
+          <span id="scan-count" class="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">0 items</span>
+        </div>
+        <div id="recent-scans" class="flex-1 overflow-y-auto space-y-1.5 max-h-[180px] text-xs font-mono">
+          <div class="text-center text-slate-500 py-6 text-[11px]" data-i18n="scanner_no_scans">
+            No barcodes scanned yet this session.
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <script src="/js/scanner.js?v=2.1"></script>
+  </body>
+</html>

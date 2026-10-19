@@ -56,13 +56,20 @@ async function migrate() {
       ON CONFLICT (email) DO NOTHING;
     `, [defaultPasswordHash, managerPasswordHash, cashierPasswordHash]);
 
-    // 5. Indexes
+    // 5. Add columns to items if not exist
+    await client.query(`
+      ALTER TABLE items ADD COLUMN IF NOT EXISTS barcode VARCHAR(100);
+      ALTER TABLE items ADD COLUMN IF NOT EXISTS min_stock_level INT DEFAULT 5;
+    `);
+
+    // 6. Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_events_item_id ON inventory_events(item_id);
       CREATE INDEX IF NOT EXISTS idx_events_event_type ON inventory_events(event_type);
       CREATE INDEX IF NOT EXISTS idx_events_timestamp ON inventory_events(timestamp DESC);
       CREATE INDEX IF NOT EXISTS idx_events_store_id ON inventory_events(store_id);
       CREATE INDEX IF NOT EXISTS idx_items_business_id ON items(business_id);
+      CREATE INDEX IF NOT EXISTS idx_items_barcode ON items(barcode);
       CREATE INDEX IF NOT EXISTS idx_users_business_id ON users(business_id);
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     `);

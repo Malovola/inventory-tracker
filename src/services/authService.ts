@@ -12,6 +12,7 @@ export interface TokenPayload {
   businessId: string;
   email: string;
   role: 'owner' | 'manager' | 'cashier';
+  displayName?: string;
 }
 
 export async function hashPassword(password: string): Promise<string> {

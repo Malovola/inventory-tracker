@@ -16,7 +16,7 @@ export const createEventSchema = z.object({
 
 export const listEventsQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(50),
+  limit: z.coerce.number().int().positive().max(1000).default(50),
   item_id: uuidSchema.optional(),
   store_id: uuidSchema.optional(),
   event_type: z.enum(['RESTOCK', 'SALE', 'ADJUSTMENT', 'RETURN', 'WASTE']).optional(),

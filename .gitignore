@@ -6,3 +6,8 @@ node_modules/
 .DS_Store
 
 interactive_roadmap.html
+DOCUMENT_TH.md
+.cert/
+*.pem
+*.crt
+*.key

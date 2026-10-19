@@ -1,8 +1,70 @@
+/* =========================================================
+   SIDEBAR & NAVIGATION
+   ========================================================= */
+
 .sidebar {
-    width: 230px;
     background: #0d1320;
     border-right: 1px solid var(--border-color);
-    transition: transform 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Mobile & Tablet Drawer (below 1024px) */
+@media (max-width: 1023px) {
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 270px !important;
+        max-width: 82vw !important;
+        height: 100vh !important;
+        z-index: 50 !important;
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 4px 0 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .sidebar.open {
+        transform: translateX(0) !important;
+    }
+
+    .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 45;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .sidebar-backdrop.active {
+        display: block !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+}
+
+/* Desktop Sidebar (1024px and above) */
+@media (min-width: 1024px) {
+    .sidebar {
+        width: 230px !important;
+        height: 100vh !important;
+        position: sticky !important;
+        top: 0;
+        flex-shrink: 0 !important;
+        transform: none !important;
+    }
+
+    .sidebar-backdrop {
+        display: none !important;
+        pointer-events: none !important;
+    }
 }
 
 .nav-link {
@@ -15,7 +77,10 @@
     font-weight: 500;
     color: var(--text-muted);
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     transition: background 0.15s ease, color 0.15s ease;
+    user-select: none;
 }
 
 .nav-link:hover:not(.active) {
@@ -34,7 +99,19 @@
     color: #60a5fa;
 }
 
-/* Minimal Solid Table */
+/* Touch & Click Targets */
+button,
+a,
+select,
+input {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -60,4 +137,146 @@ td {
 
 tr:hover td {
     background: rgba(255, 255, 255, 0.02);
+}
+
+/* =========================================================
+   STOCK STATUS PILLS & ACTION BUTTONS
+   ========================================================= */
+
+.stock-pill {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.stock-healthy {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.stock-low {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.stock-out {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.action-btn-sm {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: var(--surface-card);
+    color: var(--text-muted);
+}
+
+.action-btn-sm:hover {
+    color: #ffffff;
+    background: #1e293b;
+    border-color: #3b82f6;
+}
+
+/* =========================================================
+   TOAST NOTIFICATION CONTAINER
+   ========================================================= */
+
+#toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+    max-width: 90vw;
+    width: 380px;
+}
+
+.toast {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    pointer-events: auto;
+    animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.toast-success {
+    background: #062b1b;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+}
+
+.toast-warning {
+    background: #341a00;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fde68a;
+}
+
+.toast-error {
+    background: #2e0808;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+.toast-info {
+    background: #0b1f3a;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
+}
+
+/* =========================================================
+   SCANNER MODAL LASER ANIMATION
+   ========================================================= */
+
+.scanner-laser-line {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    height: 2px;
+    background: #3b82f6;
+    box-shadow: 0 0 12px 2px #3b82f6;
+    top: 20%;
+    animation: modalLaser 2s infinite ease-in-out alternate;
+    pointer-events: none;
+    z-index: 20;
+}
+
+@keyframes modalLaser {
+    0% { top: 15%; opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { top: 85%; opacity: 0.7; }
 }

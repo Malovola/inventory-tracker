@@ -191,6 +191,99 @@ async function runVerification() {
   });
   assert(invalidEvent.status === 400, '18. Invalid schema input rejected with 400 validation error');
 
+  // 19. Register item with a dedicated barcode for scanner test
+  const testBarcode = `BARCODE-${Date.now()}`;
+  const barcodeItemRes = await fetch(`${BASE}/api/items`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ownerToken}` },
+    body: JSON.stringify({
+      sku: `SCAN-${Date.now()}`,
+      barcode: testBarcode,
+      name: 'Matcha Green Tea',
+      category: 'Beverages',
+      unit_cost_default: 3.5,
+      min_stock_level: 8,
+    }),
+  });
+  const barcodeItem = await barcodeItemRes.json();
+  assert(barcodeItemRes.status === 201 && barcodeItem.barcode === testBarcode, '19. Created product with specific barcode for scanning');
+
+  // 20. Barcode Scan: Existing item auto-restocks +1
+  const scanExistRes = await fetch(`${BASE}/api/stock/scan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cashierToken}` },
+    body: JSON.stringify({ barcode: testBarcode, quantity: 1 }),
+  });
+  const scanExistData = await scanExistRes.json();
+  assert(
+    scanExistRes.status === 200 &&
+      scanExistData.found === true &&
+      scanExistData.action === 'RESTOCKED' &&
+      scanExistData.new_quantity === 1,
+    '20. Scanned existing barcode automatically added to inventory (+1 restock count)'
+  );
+
+  // 21. Barcode Scan: Unknown barcode returns found=false with barcode payload
+  const unknownBarcode = `UNKNOWN-${Date.now()}`;
+  const scanUnknownRes = await fetch(`${BASE}/api/stock/scan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cashierToken}` },
+    body: JSON.stringify({ barcode: unknownBarcode }),
+  });
+  const scanUnknownData = await scanUnknownRes.json();
+  assert(
+    scanUnknownRes.status === 200 &&
+      scanUnknownData.found === false &&
+      scanUnknownData.barcode === unknownBarcode,
+    '21. Unknown barcode scan returns found:false (triggers register item redirect)'
+  );
+
+  // 22. Quick barcode lookup API
+  const lookupRes = await fetch(`${BASE}/api/items/barcode/${testBarcode}`, {
+    headers: { Authorization: `Bearer ${cashierToken}` },
+  });
+  const lookupData = await lookupRes.json();
+  assert(
+    lookupRes.status === 200 && lookupData.id === barcodeItem.id && lookupData.on_hand === 1,
+    '22. Barcode lookup endpoint (/api/items/barcode/:code) resolves correct item and live stock'
+  );
+
+  // 23. Owner updates product metadata (min_stock_level, price)
+  const updateRes = await fetch(`${BASE}/api/items/${barcodeItem.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ownerToken}` },
+    body: JSON.stringify({ min_stock_level: 15, unit_cost_default: 4.0 }),
+  });
+  const updateData = await updateRes.json();
+  assert(
+    updateRes.status === 200 && updateData.min_stock_level === 15 && Number(updateData.unit_cost_default) === 4.0,
+    '23. Owner updated item min_stock_level and default unit cost'
+  );
+
+  // 24. Low stock status filter in /api/stock
+  const lowStockRes = await fetch(`${BASE}/api/stock?status=low`, {
+    headers: { Authorization: `Bearer ${cashierToken}` },
+  });
+  const lowStockData = await lowStockRes.json();
+  const foundLow = (lowStockData.data || []).some((s: any) => s.item_id === barcodeItem.id);
+  assert(
+    lowStockRes.status === 200 && foundLow,
+    '24. Stock filtering by status=low correctly flags item below min_stock_level'
+  );
+
+  // 25. Export inventory to CSV
+  const exportRes = await fetch(`${BASE}/api/stock/export`, {
+    headers: { Authorization: `Bearer ${cashierToken}` },
+  });
+  const csvText = await exportRes.text();
+  assert(
+    exportRes.status === 200 &&
+      Boolean(exportRes.headers.get('content-type')?.includes('text/csv')) &&
+      csvText.includes('SKU,Barcode,Product Name') &&
+      csvText.includes(testBarcode),
+    '25. Inventory export (/api/stock/export) returns valid CSV with headers and products'
+  );
+
   console.log('\n====================================================');
   if (failed === 0) {
     console.log(`🎉 ALL ${passed} VERIFICATION TESTS PASSED PERFECTLY!`);
@@ -201,3 +294,4 @@ async function runVerification() {
 }
 
 runVerification();
+
